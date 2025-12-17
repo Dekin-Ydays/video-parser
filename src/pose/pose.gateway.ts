@@ -91,9 +91,6 @@ export class PoseGateway {
     }
 
     this.poseService.upsertLatest(clientId, frame);
-    this.logger.log(
-      `Received frame from clientId=${clientId} with ${frame.landmarks.length} landmarks`,
-    );
 
     const ack: AckMessage = {
       type: 'ack',
