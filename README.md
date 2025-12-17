@@ -26,6 +26,37 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## WebSocket (MediaPipe points ingestion)
+
+- Endpoint: `ws://localhost:3000/ws`
+- Server sends on connect: `{"type":"welcome","clientId":"...","serverTime":...}`
+- Client sends pose frames as JSON (any of these keys are accepted): `landmarks`, `poseLandmarks`, `points`, or `data`
+
+Example payload:
+
+```json
+{
+  "type": "pose",
+  "timestamp": 1730000000000,
+  "landmarks": [{ "x": 0.1, "y": 0.2, "z": -0.3, "visibility": 0.99 }]
+}
+```
+
+Also accepted (your new format):
+
+```json
+{
+  "type": "pose-landmarks",
+  "timestamp": 1730000000000,
+  "data": [[{ "x": 0.1, "y": 0.2, "z": -0.3, "visibility": 0.99 }]]
+}
+```
+
+Debug HTTP endpoints:
+
+- `GET /pose/clients`
+- `GET /pose/latest/:clientId`
+
 ## Project setup
 
 ```bash

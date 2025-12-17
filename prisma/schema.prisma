@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Video {
+  id        String    @id @default(uuid())
+  startTime DateTime  @default(now())
+  endTime   DateTime?
+  frames    Frame[]
+}
+
+model Frame {
+  id        Int      @id @default(autoincrement())
+  video     Video    @relation(fields: [videoId], references: [id])
+  videoId   String
+  data      Json
+  createdAt DateTime @default(now())
+}
