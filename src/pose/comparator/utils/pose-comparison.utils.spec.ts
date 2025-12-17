@@ -1,3 +1,4 @@
+import { Frame, Landmark } from '../../types/pose-comparison.types';
 import {
   calculateMidpoint,
   calculateDistance,
@@ -11,7 +12,6 @@ import {
   rotationNormalize,
   isLandmarkVisible,
 } from './pose-comparison.utils';
-import { Landmark, Frame } from './pose-comparison.types';
 
 describe('pose-comparison.utils', () => {
   describe('calculateMidpoint', () => {

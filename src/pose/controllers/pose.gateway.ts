@@ -4,8 +4,8 @@ import { randomUUID } from 'crypto';
 import type { IncomingMessage } from 'http';
 import type WebSocket from 'ws';
 import type { RawData } from 'ws';
-import { PoseService } from './pose.service';
-import { normalizeFrame } from './pose.normalization';
+import { PoseService } from '../pose.service';
+import { normalizeFrame } from '../utils/pose.normalization';
 
 type WelcomeMessage = {
   type: 'welcome';

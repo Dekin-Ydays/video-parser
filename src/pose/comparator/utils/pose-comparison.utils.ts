@@ -1,4 +1,4 @@
-import { Landmark, Frame } from './pose-comparison.types';
+import { Frame, Landmark } from '../../types/pose-comparison.types';
 
 export interface Point3D {
   x: number;

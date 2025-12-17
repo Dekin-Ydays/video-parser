@@ -4,7 +4,7 @@ import {
   ScoringResult,
   ComparatorConfig,
   DEFAULT_COMPARATOR_CONFIG,
-} from './pose-comparison.types';
+} from '../types/pose-comparison.types';
 import {
   calculateDistance,
   calculateJointAngle,
@@ -13,7 +13,7 @@ import {
   scaleNormalize,
   rotationNormalize,
   isLandmarkVisible,
-} from './pose-comparison.utils';
+} from './utils/pose-comparison.utils';
 
 export class PoseComparator {
   private readonly config: Required<

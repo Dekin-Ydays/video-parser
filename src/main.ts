@@ -8,6 +8,5 @@ async function bootstrap() {
   app.enableCors(); // Enable CORS for frontend integration
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
-  console.log(`Video Parser API running on http://localhost:${port}`);
 }
 bootstrap();

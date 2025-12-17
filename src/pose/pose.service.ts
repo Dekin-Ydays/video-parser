@@ -1,15 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { PoseFrame } from './pose.types';
+import type { PoseFrame } from './types/pose.types';
 import { PrismaService } from '../prisma.service';
 import { Prisma } from '../generated/client/client';
-import { PoseComparator } from './pose-comparator';
 import {
-  Video,
+  ComparatorConfig,
   Frame,
   Landmark,
+  PoseComparator,
   ScoringResult,
-  ComparatorConfig,
-} from './pose-comparison.types';
+  Video,
+} from './comparator';
 
 @Injectable()
 export class PoseService {
@@ -120,10 +120,9 @@ export class PoseService {
       });
 
       return videos.map((video) => {
-        const duration =
-          video.endTime
-            ? video.endTime.getTime() - video.startTime.getTime()
-            : null;
+        const duration = video.endTime
+          ? video.endTime.getTime() - video.startTime.getTime()
+          : null;
 
         return {
           id: video.id,

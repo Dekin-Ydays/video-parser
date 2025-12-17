@@ -6,8 +6,8 @@ import {
   Post,
   Body,
 } from '@nestjs/common';
-import { PoseService } from './pose.service';
-import { ComparatorConfig } from './pose-comparison.types';
+import { PoseService } from '../pose.service';
+import { ComparatorConfig } from '../comparator';
 
 @Controller('pose')
 export class PoseController {

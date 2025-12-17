@@ -1,5 +1,5 @@
 import { PoseComparator } from './pose-comparator';
-import { Video, Frame, Landmark } from './pose-comparison.types';
+import { Video, Frame, Landmark } from '../types/pose-comparison.types';
 
 describe('PoseComparator', () => {
   let comparator: PoseComparator;

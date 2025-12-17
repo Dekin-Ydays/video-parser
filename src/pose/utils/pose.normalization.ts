@@ -1,4 +1,4 @@
-import type { MediapipeLandmark, PoseFrame } from './pose.types';
+import type { MediapipeLandmark, PoseFrame } from '../types/pose.types';
 
 function isLandmark(value: unknown): value is MediapipeLandmark {
   if (!value || typeof value !== 'object') return false;
