@@ -186,8 +186,8 @@ export class PoseComparator {
 
     // Convert distance to 0-100 percentage score
     // Using exponential decay: score = 100 * e^(-k * distance)
-    // where k is chosen so that distance of 0.5 gives ~60% score
-    const k = 2.0;
+    // where k is chosen to be more lenient (0.5 means distance of 0.5 gives ~78% score)
+    const k = 0.5;
     const score = 100 * Math.exp(-k * avgDistance);
 
     return Math.max(0, Math.min(100, score));

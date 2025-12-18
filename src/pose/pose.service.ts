@@ -71,13 +71,26 @@ export class PoseService {
     if (videoId) {
       this.videoIdByClientId.delete(clientId);
       try {
-        await this.prisma.video.update({
-          where: { id: videoId },
-          data: { endTime: new Date() },
+        const frameCount = await this.prisma.frame.count({
+          where: { videoId },
         });
-        this.logger.log(
-          `Ended video recording for clientId=${clientId} videoId=${videoId}`,
-        );
+
+        if (frameCount === 0) {
+          await this.prisma.video.delete({
+            where: { id: videoId },
+          });
+          this.logger.log(
+            `Deleted empty video for clientId=${clientId} videoId=${videoId}`,
+          );
+        } else {
+          await this.prisma.video.update({
+            where: { id: videoId },
+            data: { endTime: new Date() },
+          });
+          this.logger.log(
+            `Ended video recording for clientId=${clientId} videoId=${videoId}`,
+          );
+        }
       } catch (error) {
         this.logger.error(`Failed to end video for videoId=${videoId}`, error);
       }

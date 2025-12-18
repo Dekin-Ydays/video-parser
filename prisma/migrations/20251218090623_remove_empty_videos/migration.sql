@@ -1,0 +1,1 @@
+DELETE FROM "Video" WHERE id NOT IN (SELECT DISTINCT "videoId" FROM "Frame");
