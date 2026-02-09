@@ -168,21 +168,24 @@ export class PoseService {
 
       const frames: Frame[] = video.frames
         .map((frame) => {
-          const data = frame.data as any;
-          if (!data || !data.landmarks) {
+          const data = frame.data as Record<string, unknown> | null;
+          if (
+            !data ||
+            !Array.isArray(data.landmarks)
+          ) {
             return null;
           }
 
-          const landmarks: Landmark[] = data.landmarks.map((lm: any) => ({
-            x: lm.x ?? 0,
-            y: lm.y ?? 0,
-            z: lm.z ?? 0,
-            visibility: lm.visibility,
+          const landmarks: Landmark[] = (data.landmarks as Record<string, unknown>[]).map((lm) => ({
+            x: typeof lm.x === 'number' ? lm.x : 0,
+            y: typeof lm.y === 'number' ? lm.y : 0,
+            z: typeof lm.z === 'number' ? lm.z : 0,
+            visibility: typeof lm.visibility === 'number' ? lm.visibility : undefined,
           }));
 
           return {
             landmarks,
-            timestamp: data.timestamp ?? 0,
+            timestamp: typeof data.timestamp === 'number' ? data.timestamp : 0,
           };
         })
         .filter((frame): frame is Frame => frame !== null);

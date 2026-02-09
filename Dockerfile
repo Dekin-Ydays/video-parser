@@ -1,24 +1,19 @@
-# Use the official Node.js image as the base image
-FROM node:20
-
-# Set the working directory inside the container
-WORKDIR /usr/src/app
-
-# Copy package.json and package-lock.json to the working directory
-COPY package*.json ./
-
-# Install the application dependencies
-RUN npm install
-
-# Copy the rest of the application files
+# Build stage
+FROM node:20-alpine AS builder
+RUN corepack enable && corepack prepare pnpm@latest --activate
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
+RUN pnpm run build
 
-# Build the NestJS application
-RUN npm run build
-
-# Expose the application port
+# Production stage
+FROM node:20-alpine
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+USER appuser
 EXPOSE 3000
-
-# Command to run the application
 CMD ["node", "dist/main"]
-

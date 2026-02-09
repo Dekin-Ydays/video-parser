@@ -7,7 +7,7 @@ import {
   Body,
 } from '@nestjs/common';
 import { PoseService } from '../pose.service';
-import { ComparatorConfig } from '../comparator';
+import { CompareVideosDto } from '../dto/compare-videos.dto';
 
 @Controller('pose')
 export class PoseController {
@@ -38,14 +38,7 @@ export class PoseController {
   }
 
   @Post('compare')
-  async compareVideos(
-    @Body()
-    body: {
-      referenceVideoId: string;
-      comparisonVideoId: string;
-      config?: ComparatorConfig;
-    },
-  ) {
+  async compareVideos(@Body() body: CompareVideosDto) {
     const result = await this.poseService.compareVideos(
       body.referenceVideoId,
       body.comparisonVideoId,
