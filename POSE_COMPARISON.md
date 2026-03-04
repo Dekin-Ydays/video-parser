@@ -198,7 +198,7 @@ Calculates 3D distance between corresponding landmarks with weighted importance:
 - Core/hips (23-24): weight 1.2
 - Lower body (25-32): weight 1.8
 
-Score formula: `100 * e^(-2.0 * avgDistance)`
+Score formula: `100 * e^(-0.5 * avgDistance)` (current implementation constant `k = 0.5`)
 
 ### 3. Angular Score
 
