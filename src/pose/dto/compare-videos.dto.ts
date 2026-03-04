@@ -1,5 +1,4 @@
 import { IsString, IsOptional, IsObject } from 'class-validator';
-import { ComparatorConfig } from '../comparator';
 
 export class CompareVideosDto {
   @IsString()
@@ -10,5 +9,5 @@ export class CompareVideosDto {
 
   @IsOptional()
   @IsObject()
-  config?: ComparatorConfig;
+  config?: Record<string, unknown>;
 }
