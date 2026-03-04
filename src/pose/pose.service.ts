@@ -14,6 +14,28 @@ import {
 } from './pose-video.repository';
 import { PoseRecordingSessionService } from './pose-recording-session.service';
 
+export type CompareVideosErrorCode =
+  | 'not_found'
+  | 'invalid_config'
+  | 'internal_error';
+
+export type CompareVideosSuccessOutcome = { ok: true; result: ScoringResult };
+export type CompareVideosFailureOutcome = {
+  ok: false;
+  error: CompareVideosErrorCode;
+  message: string;
+};
+
+export type CompareVideosOutcome =
+  | CompareVideosSuccessOutcome
+  | CompareVideosFailureOutcome;
+
+export function isCompareVideosSuccess(
+  outcome: CompareVideosOutcome,
+): outcome is CompareVideosSuccessOutcome {
+  return outcome.ok === true;
+}
+
 @Injectable()
 export class PoseService {
   private readonly logger = new Logger(PoseService.name);
@@ -78,7 +100,7 @@ export class PoseService {
     referenceVideoId: string,
     comparisonVideoId: string,
     config?: unknown,
-  ): Promise<ScoringResult | null> {
+  ): Promise<CompareVideosOutcome> {
     try {
       const referenceVideo = await this.getVideoById(referenceVideoId);
       const comparisonVideo = await this.getVideoById(comparisonVideoId);
@@ -87,7 +109,19 @@ export class PoseService {
         this.logger.warn(
           `Failed to compare videos: reference=${!!referenceVideo}, comparison=${!!comparisonVideo}`,
         );
-        return null;
+        return {
+          ok: false,
+          error: 'not_found',
+          message: 'One or both videos were not found',
+        };
+      }
+
+      if (this.isInvalidCompareConfig(config)) {
+        return {
+          ok: false,
+          error: 'invalid_config',
+          message: 'Invalid comparator configuration',
+        };
       }
 
       const comparatorConfig = adaptComparatorConfig(config);
@@ -100,14 +134,35 @@ export class PoseService {
         `Compared videos: ref=${referenceVideoId}, comp=${comparisonVideoId}, score=${result.overallScore.toFixed(2)}`,
       );
 
-      return result;
+      return { ok: true, result };
     } catch (error) {
       this.logger.error(
         `Failed to compare videos ref=${referenceVideoId} comp=${comparisonVideoId}`,
         error,
       );
-      return null;
+      return {
+        ok: false,
+        error: 'internal_error',
+        message: 'Failed to compare videos due to an internal error',
+      };
     }
+  }
+
+  private isInvalidCompareConfig(config: unknown): boolean {
+    if (config === undefined) {
+      return false;
+    }
+
+    if (!config || typeof config !== 'object' || Array.isArray(config)) {
+      return true;
+    }
+
+    const rawObject = config as Record<string, unknown>;
+    if (Object.keys(rawObject).length === 0) {
+      return false;
+    }
+
+    return adaptComparatorConfig(config) === undefined;
   }
 
   private mapStoredVideoToVideo(storedVideo: StoredPoseVideoRecord): Video {
