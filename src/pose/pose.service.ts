@@ -17,6 +17,11 @@ export class PoseService {
   private readonly latestByClientId = new Map<string, PoseFrame>();
   private readonly lastSeenAtByClientId = new Map<string, number>();
   private readonly videoIdByClientId = new Map<string, string>();
+  private readonly videoStartPromiseByClientId = new Map<
+    string,
+    Promise<string | null>
+  >();
+  private readonly pendingFramesByClientId = new Map<string, PoseFrame[]>();
   private readonly comparator: PoseComparator;
 
   constructor(private readonly prisma: PrismaService) {
@@ -24,22 +29,7 @@ export class PoseService {
   }
 
   async startVideo(clientId: string): Promise<void> {
-    try {
-      const video = await this.prisma.video.create({
-        data: {
-          startTime: new Date(),
-        },
-      });
-      this.videoIdByClientId.set(clientId, video.id);
-      this.logger.log(
-        `Started video recording for clientId=${clientId} videoId=${video.id}`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Failed to start video for clientId=${clientId}`,
-        error,
-      );
-    }
+    await this.ensureVideoStarted(clientId);
   }
 
   async upsertLatest(clientId: string, frame: PoseFrame): Promise<void> {
@@ -48,24 +38,48 @@ export class PoseService {
 
     const videoId = this.videoIdByClientId.get(clientId);
     if (videoId) {
-      // Intentionally not awaiting to avoid blocking the websocket loop heavily,
-      // but catching errors to prevent unhandled rejections.
-      this.prisma.frame
-        .create({
-          data: {
-            videoId,
-            data: frame as unknown as Prisma.InputJsonValue,
-          },
-        })
-        .catch((err) => {
-          this.logger.error(`Failed to save frame for videoId=${videoId}`, err);
-        });
+      this.persistFrame(videoId, frame);
+      return;
     }
+
+    const pending = this.pendingFramesByClientId.get(clientId) ?? [];
+    pending.push(frame);
+    this.pendingFramesByClientId.set(clientId, pending);
+
+    void this.ensureVideoStarted(clientId)
+      .then((createdVideoId) => {
+        if (!createdVideoId) {
+          this.pendingFramesByClientId.delete(clientId);
+          return;
+        }
+
+        const queuedFrames = this.pendingFramesByClientId.get(clientId);
+        if (!queuedFrames || queuedFrames.length === 0) {
+          return;
+        }
+
+        this.pendingFramesByClientId.delete(clientId);
+        for (const queuedFrame of queuedFrames) {
+          this.persistFrame(createdVideoId, queuedFrame);
+        }
+      })
+      .catch((error) => {
+        this.logger.error(
+          `Failed to flush buffered frames for clientId=${clientId}`,
+          error,
+        );
+      });
   }
 
   async removeClient(clientId: string): Promise<void> {
     this.latestByClientId.delete(clientId);
     this.lastSeenAtByClientId.delete(clientId);
+    this.pendingFramesByClientId.delete(clientId);
+
+    const inFlightVideoStart = this.videoStartPromiseByClientId.get(clientId);
+    if (inFlightVideoStart) {
+      await inFlightVideoStart;
+    }
 
     const videoId = this.videoIdByClientId.get(clientId);
     if (videoId) {
@@ -228,5 +242,56 @@ export class PoseService {
       );
       return null;
     }
+  }
+
+  private persistFrame(videoId: string, frame: PoseFrame): void {
+    // Intentionally not awaiting to avoid blocking the websocket loop heavily,
+    // but catching errors to prevent unhandled rejections.
+    this.prisma.frame
+      .create({
+        data: {
+          videoId,
+          data: frame as unknown as Prisma.InputJsonValue,
+        },
+      })
+      .catch((error) => {
+        this.logger.error(`Failed to save frame for videoId=${videoId}`, error);
+      });
+  }
+
+  private ensureVideoStarted(clientId: string): Promise<string | null> {
+    const existingVideoId = this.videoIdByClientId.get(clientId);
+    if (existingVideoId) {
+      return Promise.resolve(existingVideoId);
+    }
+
+    const existingPromise = this.videoStartPromiseByClientId.get(clientId);
+    if (existingPromise) {
+      return existingPromise;
+    }
+
+    const startPromise = this.prisma.video
+      .create({
+        data: {
+          startTime: new Date(),
+        },
+      })
+      .then((video) => {
+        this.videoIdByClientId.set(clientId, video.id);
+        this.logger.log(
+          `Started video recording for clientId=${clientId} videoId=${video.id}`,
+        );
+        return video.id;
+      })
+      .catch((error) => {
+        this.logger.error(`Failed to start video for clientId=${clientId}`, error);
+        return null;
+      })
+      .finally(() => {
+        this.videoStartPromiseByClientId.delete(clientId);
+      });
+
+    this.videoStartPromiseByClientId.set(clientId, startPromise);
+    return startPromise;
   }
 }

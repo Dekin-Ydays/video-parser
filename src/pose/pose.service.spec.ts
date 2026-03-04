@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PoseService } from './pose.service';
 import { PrismaService } from '../prisma.service';
+import { PoseFrame } from './types/pose.types';
 
 describe('PoseService', () => {
   let service: PoseService;
@@ -44,6 +45,40 @@ describe('PoseService', () => {
   });
 
   describe('removeClient', () => {
+    it('should buffer frames until startVideo completes', async () => {
+      const clientId = 'client-buffer';
+      const videoId = 'video-buffer';
+      const frame: PoseFrame = {
+        timestamp: 1,
+        landmarks: [{ x: 0.1, y: 0.2, z: 0.3 }],
+      };
+
+      let resolveVideoCreate: ((value: { id: string }) => void) | undefined;
+      mockPrismaService.video.create.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveVideoCreate = resolve;
+          }),
+      );
+      mockPrismaService.frame.create.mockResolvedValue({});
+
+      const startPromise = service.startVideo(clientId);
+      await service.upsertLatest(clientId, frame);
+
+      expect(mockPrismaService.frame.create).not.toHaveBeenCalled();
+
+      resolveVideoCreate?.({ id: videoId });
+      await startPromise;
+      await Promise.resolve();
+
+      expect(mockPrismaService.frame.create).toHaveBeenCalledWith({
+        data: {
+          videoId,
+          data: frame,
+        },
+      });
+    });
+
     it('should delete video if frame count is 0', async () => {
       const clientId = 'client1';
       const videoId = 'video1';
