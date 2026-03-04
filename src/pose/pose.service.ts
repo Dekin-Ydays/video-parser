@@ -22,6 +22,7 @@ export class PoseService {
     Promise<string | null>
   >();
   private readonly pendingFramesByClientId = new Map<string, PoseFrame[]>();
+  private readonly frameWriteChainByClientId = new Map<string, Promise<void>>();
   private readonly comparator: PoseComparator;
 
   constructor(private readonly prisma: PrismaService) {
@@ -38,7 +39,7 @@ export class PoseService {
 
     const videoId = this.videoIdByClientId.get(clientId);
     if (videoId) {
-      this.persistFrame(videoId, frame);
+      this.enqueueFramePersist(clientId, videoId, frame);
       return;
     }
 
@@ -53,14 +54,9 @@ export class PoseService {
           return;
         }
 
-        const queuedFrames = this.pendingFramesByClientId.get(clientId);
-        if (!queuedFrames || queuedFrames.length === 0) {
-          return;
-        }
-
-        this.pendingFramesByClientId.delete(clientId);
+        const queuedFrames = this.drainPendingFrames(clientId);
         for (const queuedFrame of queuedFrames) {
-          this.persistFrame(createdVideoId, queuedFrame);
+          this.enqueueFramePersist(clientId, createdVideoId, queuedFrame);
         }
       })
       .catch((error) => {
@@ -74,7 +70,6 @@ export class PoseService {
   async removeClient(clientId: string): Promise<void> {
     this.latestByClientId.delete(clientId);
     this.lastSeenAtByClientId.delete(clientId);
-    this.pendingFramesByClientId.delete(clientId);
 
     const inFlightVideoStart = this.videoStartPromiseByClientId.get(clientId);
     if (inFlightVideoStart) {
@@ -83,6 +78,12 @@ export class PoseService {
 
     const videoId = this.videoIdByClientId.get(clientId);
     if (videoId) {
+      const queuedFrames = this.drainPendingFrames(clientId);
+      for (const queuedFrame of queuedFrames) {
+        this.enqueueFramePersist(clientId, videoId, queuedFrame);
+      }
+
+      await this.flushFrameWrites(clientId);
       this.videoIdByClientId.delete(clientId);
       try {
         const frameCount = await this.prisma.frame.count({
@@ -109,6 +110,9 @@ export class PoseService {
         this.logger.error(`Failed to end video for videoId=${videoId}`, error);
       }
     }
+
+    this.pendingFramesByClientId.delete(clientId);
+    this.frameWriteChainByClientId.delete(clientId);
   }
 
   listClients(): Array<{ clientId: string; lastSeenAt: number | null }> {
@@ -247,19 +251,53 @@ export class PoseService {
     }
   }
 
-  private persistFrame(videoId: string, frame: PoseFrame): void {
-    // Intentionally not awaiting to avoid blocking the websocket loop heavily,
-    // but catching errors to prevent unhandled rejections.
-    this.prisma.frame
-      .create({
-        data: {
-          videoId,
-          data: frame as unknown as Prisma.InputJsonValue,
-        },
-      })
-      .catch((error) => {
-        this.logger.error(`Failed to save frame for videoId=${videoId}`, error);
+  private drainPendingFrames(clientId: string): PoseFrame[] {
+    const queuedFrames = this.pendingFramesByClientId.get(clientId) ?? [];
+    this.pendingFramesByClientId.delete(clientId);
+    return queuedFrames;
+  }
+
+  private enqueueFramePersist(
+    clientId: string,
+    videoId: string,
+    frame: PoseFrame,
+  ): void {
+    const currentChain =
+      this.frameWriteChainByClientId.get(clientId) ?? Promise.resolve();
+
+    // Chain frame writes per client to keep ordering and support deterministic
+    // flush before ending the video session.
+    const nextChain = currentChain
+      .catch(() => undefined)
+      .then(async () => {
+        try {
+          await this.prisma.frame.create({
+            data: {
+              videoId,
+              data: frame as unknown as Prisma.InputJsonValue,
+            },
+          });
+        } catch (error) {
+          this.logger.error(`Failed to save frame for videoId=${videoId}`, error);
+        }
       });
+
+    this.frameWriteChainByClientId.set(clientId, nextChain);
+  }
+
+  private async flushFrameWrites(clientId: string): Promise<void> {
+    while (true) {
+      const currentChain = this.frameWriteChainByClientId.get(clientId);
+      if (!currentChain) {
+        return;
+      }
+
+      await currentChain;
+      if (this.frameWriteChainByClientId.get(clientId) === currentChain) {
+        this.frameWriteChainByClientId.delete(clientId);
+        return;
+      }
+    }
   }
 
   private ensureVideoStarted(clientId: string): Promise<string | null> {

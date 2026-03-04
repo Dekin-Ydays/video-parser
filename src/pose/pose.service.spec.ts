@@ -69,7 +69,7 @@ describe('PoseService', () => {
 
       resolveVideoCreate?.({ id: videoId });
       await startPromise;
-      await Promise.resolve();
+      await new Promise((resolve) => setImmediate(resolve));
 
       expect(mockPrismaService.frame.create).toHaveBeenCalledWith({
         data: {
@@ -123,6 +123,42 @@ describe('PoseService', () => {
       expect(mockPrismaService.video.update).toHaveBeenCalledWith({
         where: { id: videoId },
         data: { endTime: expect.any(Date) },
+      });
+    });
+
+    it('should flush pending frame writes before counting frames', async () => {
+      const clientId = 'client-flush';
+      const videoId = 'video-flush';
+      const frame: PoseFrame = {
+        timestamp: 1,
+        landmarks: [{ x: 0.1, y: 0.2, z: 0.3 }],
+      };
+
+      let resolveFrameCreate: (() => void) | undefined;
+
+      mockPrismaService.video.create.mockResolvedValue({ id: videoId });
+      mockPrismaService.frame.create.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveFrameCreate = () => resolve({});
+          }),
+      );
+      mockPrismaService.frame.count.mockResolvedValue(1);
+      mockPrismaService.video.update.mockResolvedValue({});
+
+      await service.startVideo(clientId);
+      await service.upsertLatest(clientId, frame);
+
+      const removePromise = service.removeClient(clientId);
+      await Promise.resolve();
+
+      expect(mockPrismaService.frame.count).not.toHaveBeenCalled();
+
+      resolveFrameCreate?.();
+      await removePromise;
+
+      expect(mockPrismaService.frame.count).toHaveBeenCalledWith({
+        where: { videoId },
       });
     });
   });
