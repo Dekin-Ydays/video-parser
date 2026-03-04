@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { WebSocketGateway } from '@nestjs/websockets';
+import { SkipThrottle } from '@nestjs/throttler';
 import { randomUUID } from 'crypto';
 import type { IncomingMessage } from 'http';
 import type WebSocket from 'ws';
@@ -33,7 +34,8 @@ function rawDataToString(data: RawData): string | null {
   return null;
 }
 
-@WebSocketGateway({ path: '/ws' })
+@SkipThrottle()
+@WebSocketGateway({ path: '/ws', maxPayload: 1024 * 64 })
 export class PoseGateway {
   private readonly logger = new Logger(PoseGateway.name);
   private readonly clientIdBySocket = new WeakMap<WebSocket, string>();
