@@ -104,6 +104,60 @@ describe('PoseService', () => {
         ],
       });
     });
+
+    it('drops invalid landmarks instead of coercing values to zero', async () => {
+      mockVideoRepository.getVideoById.mockResolvedValue({
+        frames: [
+          {
+            data: {
+              timestamp: 1,
+              landmarks: [
+                { x: 1, y: 2, z: 3 },
+                { x: 'bad', y: 1, z: 1 },
+                { x: 2, y: 3, z: 4, visibility: 0.9 },
+              ],
+            },
+          },
+        ],
+      });
+
+      const video = await service.getVideoById('v1');
+
+      expect(video).toEqual({
+        frames: [
+          {
+            timestamp: 1,
+            landmarks: [
+              { x: 1, y: 2, z: 3, visibility: undefined },
+              { x: 2, y: 3, z: 4, visibility: 0.9 },
+            ],
+          },
+        ],
+      });
+    });
+
+    it('drops frames with invalid timestamp or no valid landmarks', async () => {
+      mockVideoRepository.getVideoById.mockResolvedValue({
+        frames: [
+          {
+            data: {
+              timestamp: 'bad',
+              landmarks: [{ x: 1, y: 2, z: 3 }],
+            },
+          },
+          {
+            data: {
+              timestamp: 2,
+              landmarks: [{ x: 1, y: 2 }],
+            },
+          },
+        ],
+      });
+
+      const video = await service.getVideoById('v1');
+
+      expect(video).toEqual({ frames: [] });
+    });
   });
 
   describe('compareVideos', () => {
