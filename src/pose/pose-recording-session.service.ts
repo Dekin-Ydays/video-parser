@@ -14,6 +14,7 @@ export class PoseRecordingSessionService {
     string,
     Promise<string | null>
   >();
+  private readonly startFlushScheduledByClientId = new Set<string>();
   private readonly pendingFramesByClientId = new Map<string, PoseFrame[]>();
   private readonly frameWriteChainByClientId = new Map<string, Promise<void>>();
 
@@ -51,24 +52,7 @@ export class PoseRecordingSessionService {
     pending.push(frame);
     this.pendingFramesByClientId.set(clientId, pending);
 
-    void this.ensureVideoStarted(clientId)
-      .then((createdVideoId) => {
-        if (!createdVideoId) {
-          this.pendingFramesByClientId.delete(clientId);
-          return;
-        }
-
-        const queuedFrames = this.drainPendingFrames(clientId);
-        for (const queuedFrame of queuedFrames) {
-          this.enqueueFramePersist(clientId, createdVideoId, queuedFrame);
-        }
-      })
-      .catch((error) => {
-        this.logger.error(
-          `Failed to flush buffered frames for clientId=${clientId}`,
-          error,
-        );
-      });
+    this.schedulePendingFlush(clientId);
   }
 
   async removeClient(clientId: string): Promise<void> {
@@ -113,6 +97,7 @@ export class PoseRecordingSessionService {
 
     this.pendingFramesByClientId.delete(clientId);
     this.frameWriteChainByClientId.delete(clientId);
+    this.startFlushScheduledByClientId.delete(clientId);
     this.clientStateByClientId.delete(clientId);
   }
 
@@ -136,6 +121,37 @@ export class PoseRecordingSessionService {
     const queuedFrames = this.pendingFramesByClientId.get(clientId) ?? [];
     this.pendingFramesByClientId.delete(clientId);
     return queuedFrames;
+  }
+
+  private schedulePendingFlush(clientId: string): void {
+    if (this.startFlushScheduledByClientId.has(clientId)) {
+      return;
+    }
+
+    this.startFlushScheduledByClientId.add(clientId);
+    void this.flushPendingAfterStart(clientId);
+  }
+
+  private async flushPendingAfterStart(clientId: string): Promise<void> {
+    try {
+      const createdVideoId = await this.ensureVideoStarted(clientId);
+      if (!createdVideoId) {
+        this.pendingFramesByClientId.delete(clientId);
+        return;
+      }
+
+      const queuedFrames = this.drainPendingFrames(clientId);
+      for (const queuedFrame of queuedFrames) {
+        this.enqueueFramePersist(clientId, createdVideoId, queuedFrame);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to flush buffered frames for clientId=${clientId}`,
+        error,
+      );
+    } finally {
+      this.startFlushScheduledByClientId.delete(clientId);
+    }
   }
 
   private enqueueFramePersist(
