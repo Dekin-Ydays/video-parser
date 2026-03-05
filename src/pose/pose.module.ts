@@ -5,6 +5,7 @@ import { PoseService } from './pose.service';
 import { PrismaService } from '../prisma.service';
 import { PoseVideoRepository } from './pose-video.repository';
 import { PoseRecordingSessionService } from './pose-recording-session.service';
+import { FrameBufferService } from './frame.buffer';
 
 @Module({
   controllers: [PoseController],
@@ -14,6 +15,7 @@ import { PoseRecordingSessionService } from './pose-recording-session.service';
     PoseRecordingSessionService,
     PoseVideoRepository,
     PrismaService,
+    FrameBufferService,
   ],
 })
 export class PoseModule {}

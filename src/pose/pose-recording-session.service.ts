@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { PoseFrame } from './types/pose.types';
 import { PoseVideoRepository } from './pose-video.repository';
+import { ClientStateMap } from './client-state.map';
 
 @Injectable()
 export class PoseRecordingSessionService {
   private readonly logger = new Logger(PoseRecordingSessionService.name);
+  private readonly clientStateByClientId = new ClientStateMap<null>();
   private readonly latestByClientId = new Map<string, PoseFrame>();
   private readonly lastSeenAtByClientId = new Map<string, number>();
   private readonly videoIdByClientId = new Map<string, string>();
@@ -18,10 +20,24 @@ export class PoseRecordingSessionService {
   constructor(private readonly videoRepository: PoseVideoRepository) {}
 
   async startVideo(clientId: string): Promise<void> {
+    if (
+      this.clientStateByClientId.getOrCreateOpen(clientId, () => null) ===
+      undefined
+    ) {
+      return;
+    }
+
     await this.ensureVideoStarted(clientId);
   }
 
   async upsertLatest(clientId: string, frame: PoseFrame): Promise<void> {
+    if (
+      this.clientStateByClientId.getOrCreateOpen(clientId, () => null) ===
+      undefined
+    ) {
+      return;
+    }
+
     this.latestByClientId.set(clientId, frame);
     this.lastSeenAtByClientId.set(clientId, Date.now());
 
@@ -56,6 +72,8 @@ export class PoseRecordingSessionService {
   }
 
   async removeClient(clientId: string): Promise<void> {
+    this.clientStateByClientId.markClosing(clientId);
+
     this.latestByClientId.delete(clientId);
     this.lastSeenAtByClientId.delete(clientId);
 
@@ -95,6 +113,7 @@ export class PoseRecordingSessionService {
 
     this.pendingFramesByClientId.delete(clientId);
     this.frameWriteChainByClientId.delete(clientId);
+    this.clientStateByClientId.delete(clientId);
   }
 
   listClients(): Array<{ clientId: string; lastSeenAt: number | null }> {
