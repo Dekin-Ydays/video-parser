@@ -1,12 +1,18 @@
 import {
+  BadRequestException,
   Controller,
   Get,
+  InternalServerErrorException,
   NotFoundException,
   Param,
   Post,
   Body,
 } from '@nestjs/common';
-import { PoseService } from '../pose.service';
+import {
+  CompareVideosFailureOutcome,
+  isCompareVideosSuccess,
+  PoseService,
+} from '../pose.service';
 import { CompareVideosDto } from '../dto/compare-videos.dto';
 
 @Controller('pose')
@@ -39,16 +45,26 @@ export class PoseController {
 
   @Post('compare')
   async compareVideos(@Body() body: CompareVideosDto) {
-    const result = await this.poseService.compareVideos(
+    const comparison = await this.poseService.compareVideos(
       body.referenceVideoId,
       body.comparisonVideoId,
       body.config,
     );
 
-    if (!result) {
-      throw new NotFoundException('One or both videos not found');
+    if (isCompareVideosSuccess(comparison)) {
+      return comparison.result;
     }
 
-    return result;
+    const { error, message } = comparison as CompareVideosFailureOutcome;
+
+    if (error === 'invalid_config') {
+      throw new BadRequestException(message);
+    }
+
+    if (error === 'not_found') {
+      throw new NotFoundException(message);
+    }
+
+    throw new InternalServerErrorException(message);
   }
 }
