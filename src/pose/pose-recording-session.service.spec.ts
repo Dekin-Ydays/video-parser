@@ -8,7 +8,7 @@ describe('PoseRecordingSessionService', () => {
 
   const mockVideoRepository = {
     createVideo: jest.fn(),
-    createFrame: jest.fn(),
+    createFrames: jest.fn(),
     countFrames: jest.fn(),
     deleteVideo: jest.fn(),
     endVideo: jest.fn(),
@@ -54,20 +54,20 @@ describe('PoseRecordingSessionService', () => {
             resolveVideoCreate = resolve;
           }),
       );
-      mockVideoRepository.createFrame.mockResolvedValue(undefined);
+      mockVideoRepository.createFrames.mockResolvedValue(undefined);
 
       const startPromise = service.startVideo(clientId);
       await service.upsertLatest(clientId, frame);
 
-      expect(mockVideoRepository.createFrame).not.toHaveBeenCalled();
+      expect(mockVideoRepository.createFrames).not.toHaveBeenCalled();
 
       resolveVideoCreate?.(videoId);
       await startPromise;
       await new Promise((resolve) => setImmediate(resolve));
 
-      expect(mockVideoRepository.createFrame).toHaveBeenCalledWith(
+      expect(mockVideoRepository.createFrames).toHaveBeenCalledWith(
         videoId,
-        frame,
+        [frame],
       );
     });
 
@@ -119,7 +119,7 @@ describe('PoseRecordingSessionService', () => {
       let resolveFrameCreate: (() => void) | undefined;
 
       mockVideoRepository.createVideo.mockResolvedValue(videoId);
-      mockVideoRepository.createFrame.mockImplementation(
+      mockVideoRepository.createFrames.mockImplementation(
         () =>
           new Promise((resolve) => {
             resolveFrameCreate = () => resolve(undefined);
@@ -142,6 +142,34 @@ describe('PoseRecordingSessionService', () => {
       expect(mockVideoRepository.countFrames).toHaveBeenCalledWith(videoId);
     });
 
+    it('should batch queued frames into one repository write', async () => {
+      const clientId = 'client-batch';
+      const videoId = 'video-batch';
+      const frame1: PoseFrame = {
+        timestamp: 1,
+        landmarks: [{ x: 0.1, y: 0.2, z: 0.3 }],
+      };
+      const frame2: PoseFrame = {
+        timestamp: 2,
+        landmarks: [{ x: 0.4, y: 0.5, z: 0.6 }],
+      };
+
+      mockVideoRepository.createVideo.mockResolvedValue(videoId);
+      mockVideoRepository.createFrames.mockResolvedValue(undefined);
+      mockVideoRepository.countFrames.mockResolvedValue(2);
+      mockVideoRepository.endVideo.mockResolvedValue(undefined);
+
+      await service.startVideo(clientId);
+      await service.upsertLatestBatch(clientId, [frame1, frame2]);
+      await service.removeClient(clientId);
+
+      expect(mockVideoRepository.createFrames).toHaveBeenCalledTimes(1);
+      expect(mockVideoRepository.createFrames).toHaveBeenCalledWith(videoId, [
+        frame1,
+        frame2,
+      ]);
+    });
+
     it('should ignore upserts after removeClient starts', async () => {
       const clientId = 'client-closing';
       const videoId = 'video-closing';
@@ -156,7 +184,7 @@ describe('PoseRecordingSessionService', () => {
 
       let resolveFrameCreate: (() => void) | undefined;
       mockVideoRepository.createVideo.mockResolvedValue(videoId);
-      mockVideoRepository.createFrame.mockImplementation(
+      mockVideoRepository.createFrames.mockImplementation(
         () =>
           new Promise((resolve) => {
             resolveFrameCreate = () => resolve(undefined);
@@ -175,10 +203,10 @@ describe('PoseRecordingSessionService', () => {
       resolveFrameCreate?.();
       await removePromise;
 
-      expect(mockVideoRepository.createFrame).toHaveBeenCalledTimes(1);
-      expect(mockVideoRepository.createFrame).toHaveBeenCalledWith(
+      expect(mockVideoRepository.createFrames).toHaveBeenCalledTimes(1);
+      expect(mockVideoRepository.createFrames).toHaveBeenCalledWith(
         videoId,
-        frame1,
+        [frame1],
       );
     });
   });

@@ -16,6 +16,7 @@ export class PoseRecordingSessionService {
   >();
   private readonly startFlushScheduledByClientId = new Set<string>();
   private readonly pendingFramesByClientId = new Map<string, PoseFrame[]>();
+  private readonly pendingWriteFramesByClientId = new Map<string, PoseFrame[]>();
   private readonly frameWriteChainByClientId = new Map<string, Promise<void>>();
 
   constructor(private readonly videoRepository: PoseVideoRepository) {}
@@ -32,6 +33,14 @@ export class PoseRecordingSessionService {
   }
 
   async upsertLatest(clientId: string, frame: PoseFrame): Promise<void> {
+    await this.upsertLatestBatch(clientId, [frame]);
+  }
+
+  async upsertLatestBatch(clientId: string, frames: PoseFrame[]): Promise<void> {
+    if (frames.length === 0) {
+      return;
+    }
+
     if (
       this.clientStateByClientId.getOrCreateOpen(clientId, () => null) ===
       undefined
@@ -39,17 +48,18 @@ export class PoseRecordingSessionService {
       return;
     }
 
-    this.latestByClientId.set(clientId, frame);
+    const latestFrame = frames[frames.length - 1];
+    this.latestByClientId.set(clientId, latestFrame);
     this.lastSeenAtByClientId.set(clientId, Date.now());
 
     const videoId = this.videoIdByClientId.get(clientId);
     if (videoId) {
-      this.enqueueFramePersist(clientId, videoId, frame);
+      this.enqueueFramePersist(clientId, videoId, frames);
       return;
     }
 
     const pending = this.pendingFramesByClientId.get(clientId) ?? [];
-    pending.push(frame);
+    pending.push(...frames);
     this.pendingFramesByClientId.set(clientId, pending);
 
     this.schedulePendingFlush(clientId);
@@ -69,9 +79,7 @@ export class PoseRecordingSessionService {
     const videoId = this.videoIdByClientId.get(clientId);
     if (videoId) {
       const queuedFrames = this.drainPendingFrames(clientId);
-      for (const queuedFrame of queuedFrames) {
-        this.enqueueFramePersist(clientId, videoId, queuedFrame);
-      }
+      this.enqueueFramePersist(clientId, videoId, queuedFrames);
 
       await this.flushFrameWrites(clientId);
       this.videoIdByClientId.delete(clientId);
@@ -96,6 +104,7 @@ export class PoseRecordingSessionService {
     }
 
     this.pendingFramesByClientId.delete(clientId);
+    this.pendingWriteFramesByClientId.delete(clientId);
     this.frameWriteChainByClientId.delete(clientId);
     this.startFlushScheduledByClientId.delete(clientId);
     this.clientStateByClientId.delete(clientId);
@@ -141,9 +150,7 @@ export class PoseRecordingSessionService {
       }
 
       const queuedFrames = this.drainPendingFrames(clientId);
-      for (const queuedFrame of queuedFrames) {
-        this.enqueueFramePersist(clientId, createdVideoId, queuedFrame);
-      }
+      this.enqueueFramePersist(clientId, createdVideoId, queuedFrames);
     } catch (error) {
       this.logger.error(
         `Failed to flush buffered frames for clientId=${clientId}`,
@@ -157,42 +164,62 @@ export class PoseRecordingSessionService {
   private enqueueFramePersist(
     clientId: string,
     videoId: string,
-    frame: PoseFrame,
+    frames: PoseFrame | PoseFrame[],
   ): void {
-    const currentChain =
-      this.frameWriteChainByClientId.get(clientId) ?? Promise.resolve();
+    const queuedFrames = this.pendingWriteFramesByClientId.get(clientId) ?? [];
+    if (Array.isArray(frames)) {
+      queuedFrames.push(...frames);
+    } else {
+      queuedFrames.push(frames);
+    }
+    this.pendingWriteFramesByClientId.set(clientId, queuedFrames);
 
-    // Chain frame writes per client to keep ordering and support deterministic
-    // flush before ending the video session.
-    const nextChain = currentChain
-      .catch(() => undefined)
-      .then(async () => {
-        try {
-          await this.videoRepository.createFrame(videoId, frame);
-        } catch (error) {
-          this.logger.error(
-            `Failed to save frame for videoId=${videoId}`,
-            error,
-          );
-        }
-      });
+    if (this.frameWriteChainByClientId.has(clientId)) {
+      return;
+    }
 
+    // Persist sequentially per client, but write all queued frames in each pass.
+    const nextChain = this.persistQueuedFrames(clientId, videoId).catch(
+      () => undefined,
+    );
     this.frameWriteChainByClientId.set(clientId, nextChain);
   }
 
   private async flushFrameWrites(clientId: string): Promise<void> {
-    while (true) {
-      const currentChain = this.frameWriteChainByClientId.get(clientId);
-      if (!currentChain) {
-        return;
-      }
+    const currentChain = this.frameWriteChainByClientId.get(clientId);
+    if (!currentChain) {
+      return;
+    }
 
-      await currentChain;
-      if (this.frameWriteChainByClientId.get(clientId) === currentChain) {
+    await currentChain;
+  }
+
+  private async persistQueuedFrames(
+    clientId: string,
+    videoId: string,
+  ): Promise<void> {
+    while (true) {
+      const queuedFrames = this.drainPendingWriteFrames(clientId);
+      if (queuedFrames.length === 0) {
         this.frameWriteChainByClientId.delete(clientId);
         return;
       }
+
+      try {
+        await this.videoRepository.createFrames(videoId, queuedFrames);
+      } catch (error) {
+        this.logger.error(
+          `Failed to save frames for videoId=${videoId}`,
+          error,
+        );
+      }
     }
+  }
+
+  private drainPendingWriteFrames(clientId: string): PoseFrame[] {
+    const queuedFrames = this.pendingWriteFramesByClientId.get(clientId) ?? [];
+    this.pendingWriteFramesByClientId.delete(clientId);
+    return queuedFrames;
   }
 
   private ensureVideoStarted(clientId: string): Promise<string | null> {
