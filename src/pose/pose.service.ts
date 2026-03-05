@@ -54,6 +54,10 @@ export class PoseService {
     await this.sessionService.upsertLatest(clientId, frame);
   }
 
+  async upsertLatestBatch(clientId: string, frames: PoseFrame[]): Promise<void> {
+    await this.sessionService.upsertLatestBatch(clientId, frames);
+  }
+
   async removeClient(clientId: string): Promise<void> {
     await this.sessionService.removeClient(clientId);
   }

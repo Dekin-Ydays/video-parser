@@ -63,9 +63,7 @@ export class FrameBufferService implements OnModuleDestroy {
     state.inFlight = state.inFlight
       .catch(() => undefined)
       .then(async () => {
-        for (const frame of framesToFlush) {
-          await this.poseService.upsertLatest(clientId, frame);
-        }
+        await this.poseService.upsertLatestBatch(clientId, framesToFlush);
       })
       .catch((error) => {
         this.logger.error(
