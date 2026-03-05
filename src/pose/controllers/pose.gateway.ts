@@ -75,9 +75,9 @@ export class PoseGateway {
   private readonly logger = new Logger(PoseGateway.name);
   private readonly clientIdBySocket = new WeakMap<WebSocket, string>();
 
-  constructor(private readonly poseService: PoseService) {}
+  public constructor(private readonly poseService: PoseService) {}
 
-  handleConnection(client: WebSocket, request: IncomingMessage) {
+  public handleConnection(client: WebSocket, request: IncomingMessage) {
     const clientId = randomUUID();
     this.clientIdBySocket.set(client, clientId);
 
@@ -96,7 +96,7 @@ export class PoseGateway {
     client.on('message', (data) => this.onMessage(client, data));
   }
 
-  handleDisconnect(client: WebSocket) {
+  public handleDisconnect(client: WebSocket) {
     const clientId = this.clientIdBySocket.get(client);
     if (clientId) this.poseService.removeClient(clientId);
     this.logger.log(`WS disconnected clientId=${clientId ?? 'unknown'}`);
