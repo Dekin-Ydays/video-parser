@@ -62,8 +62,43 @@ Debug HTTP endpoints:
 
 ## Project setup
 
+### 1) Environment
+
+Create `.env` with a SQLite URL:
+
+```bash
+DATABASE_URL="file:./postgres.db"
+```
+
+### 2) Enter dev shell (recommended on NixOS)
+
+```bash
+# one-time
+direnv allow
+
+# each new shell (automatic with direnv, or manual):
+nix develop
+```
+
+The flake shell exports Prisma engine paths so `prisma generate` works on NixOS.
+
+### 3) Install dependencies
+
 ```bash
 $ pnpm install
+```
+
+### 4) Generate Prisma client and apply migrations
+
+```bash
+$ pnpm exec prisma generate
+$ pnpm exec prisma migrate deploy
+```
+
+### 5) Start the API
+
+```bash
+$ pnpm run start:dev
 ```
 
 ## Compile and run the project
