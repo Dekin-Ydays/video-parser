@@ -30,25 +30,28 @@
 
 - Endpoint: `ws://localhost:3000/ws`
 - Server sends on connect: `{"type":"welcome","clientId":"...","serverTime":...}`
-- Client sends pose frames as JSON (any of these keys are accepted): `landmarks`, `poseLandmarks`, `points`, or `data`
+- Client should send pose frames as protobuf binary.
+- Protobuf schema is in [src/pose/proto/pose-frame.proto](src/pose/proto/pose-frame.proto).
+- JSON is still accepted as a fallback (keys accepted: `landmarks`, `poseLandmarks`, `points`, `data`).
 
-Example payload:
+Protobuf contract:
 
-```json
-{
-  "type": "pose",
-  "timestamp": 1730000000000,
-  "landmarks": [{ "x": 0.1, "y": 0.2, "z": -0.3, "visibility": 0.99 }]
+```proto
+syntax = "proto3";
+package pose;
+
+message Landmark {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+  float visibility = 4;
+  float presence = 5;
 }
-```
 
-Also accepted (your new format):
-
-```json
-{
-  "type": "pose-landmarks",
-  "timestamp": 1730000000000,
-  "data": [[{ "x": 0.1, "y": 0.2, "z": -0.3, "visibility": 0.99 }]]
+message PoseFrame {
+  int64 timestamp = 1;
+  string type = 2;
+  repeated Landmark landmarks = 3;
 }
 ```
 

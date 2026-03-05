@@ -28,9 +28,7 @@ export function normalizeFrame(payload: unknown): PoseFrame | null {
       : Date.now();
 
   const rawType =
-    payload &&
-    typeof payload === 'object' &&
-    typeof (payload as any).type === 'string'
+    payload && typeof payload === 'object' && typeof payload.type === 'string'
       ? (payload as any).type
       : undefined;
 
