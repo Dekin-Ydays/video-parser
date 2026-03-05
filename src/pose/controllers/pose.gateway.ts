@@ -7,6 +7,7 @@ import type WebSocket from 'ws';
 import type { RawData } from 'ws';
 import { PoseService } from '../pose.service';
 import { normalizeFrame } from '../utils/pose.normalization';
+import { decodePoseFrameProtobufBinary } from '../utils/pose.protobuf';
 
 type WelcomeMessage = {
   type: 'welcome';
@@ -26,12 +27,46 @@ type ErrorMessage = {
   message: string;
 };
 
-function rawDataToString(data: RawData): string | null {
-  if (typeof data === 'string') return data;
-  if (data instanceof Buffer) return data.toString('utf8');
-  if (Array.isArray(data)) return Buffer.concat(data).toString('utf8');
-  if (data instanceof ArrayBuffer) return Buffer.from(data).toString('utf8');
+type IncomingPayloadResult = { payload: unknown } | { error: string };
+
+function rawDataToBuffer(data: RawData): Buffer | null {
+  if (data instanceof Buffer) return data;
+  if (Array.isArray(data)) return Buffer.concat(data);
+  if (data instanceof ArrayBuffer) return Buffer.from(data);
   return null;
+}
+
+function tryParseJsonPayload(text: string): unknown | null {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function decodeIncomingPayload(data: RawData): IncomingPayloadResult {
+  if (typeof data === 'string') {
+    const jsonPayload = tryParseJsonPayload(data);
+    if (jsonPayload === null) return { error: 'Invalid JSON' };
+    return { payload: jsonPayload };
+  }
+
+  const binary = rawDataToBuffer(data);
+  if (!binary) {
+    return { error: 'Unsupported message type (expected protobuf binary)' };
+  }
+
+  const protobufPayload = decodePoseFrameProtobufBinary(binary);
+  if (protobufPayload) {
+    return { payload: protobufPayload };
+  }
+
+  const fallbackJson = tryParseJsonPayload(binary.toString('utf8'));
+  if (fallbackJson !== null) {
+    return { payload: fallbackJson };
+  }
+
+  return { error: 'Invalid protobuf payload' };
 }
 
 @SkipThrottle()
@@ -70,25 +105,16 @@ export class PoseGateway {
   private onMessage(client: WebSocket, data: RawData): void {
     const clientId = this.clientIdBySocket.get(client) ?? 'unknown';
 
-    const text = rawDataToString(data);
-    if (!text)
-      return this.sendError(
-        client,
-        'Unsupported message type (expected text/buffer)',
-      );
-
-    let payload: unknown;
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      return this.sendError(client, 'Invalid JSON');
+    const decoded = decodeIncomingPayload(data);
+    if ('error' in decoded) {
+      return this.sendError(client, decoded.error);
     }
 
-    const frame = normalizeFrame(payload);
+    const frame = normalizeFrame(decoded.payload);
     if (!frame) {
       return this.sendError(
         client,
-        'Invalid payload; expected an array of landmarks or an object with landmarks/poseLandmarks/points/data',
+        'Invalid payload; expected protobuf PoseFrame landmarks (or JSON landmarks/poseLandmarks/points/data)',
       );
     }
 

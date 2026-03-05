@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package pose;
+
+message Landmark {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+  float visibility = 4;
+  float presence = 5;
+}
+
+message PoseFrame {
+  int64 timestamp = 1;
+  string type = 2;
+  repeated Landmark landmarks = 3;
+}
