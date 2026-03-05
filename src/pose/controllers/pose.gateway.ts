@@ -119,14 +119,6 @@ export class PoseGateway {
     }
 
     this.poseService.upsertLatest(clientId, frame);
-
-    const ack: AckMessage = {
-      type: 'ack',
-      clientId,
-      receivedAt: Date.now(),
-      landmarkCount: frame.landmarks.length,
-    };
-    client.send(JSON.stringify(ack));
   }
 
   private sendError(client: WebSocket, message: string): void {
