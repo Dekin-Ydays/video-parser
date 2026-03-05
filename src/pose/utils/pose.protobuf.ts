@@ -1,33 +1,12 @@
 import { Reader } from 'protobufjs/minimal';
 import type { MediapipeLandmark } from '../types/pose.types';
-
-type LongLike = {
-  toNumber?: () => number;
-};
+import { toFiniteNumber } from '../../utils';
 
 export type ProtobufPoseFramePayload = {
   timestamp?: number;
   type?: string;
   landmarks: Array<Partial<MediapipeLandmark>>;
 };
-
-function toFiniteNumber(value: unknown): number | undefined {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (value && typeof value === 'object') {
-    const longLike = value as LongLike;
-    if (typeof longLike.toNumber === 'function') {
-      const numberValue = longLike.toNumber();
-      if (Number.isFinite(numberValue)) {
-        return numberValue;
-      }
-    }
-  }
-
-  return undefined;
-}
 
 function readNumericField(
   reader: Reader,

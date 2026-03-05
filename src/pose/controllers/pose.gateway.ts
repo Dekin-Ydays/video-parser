@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import type { IncomingMessage } from 'http';
 import type WebSocket from 'ws';
 import type { RawData } from 'ws';
+import { tryParseJson } from '../../utils';
 import { PoseService } from '../pose.service';
 import { decodePoseFrameProtobufBinary } from '../utils/pose.protobuf';
 import { FrameBufferService } from '../frame.buffer';
@@ -29,17 +30,9 @@ function rawDataToBuffer(data: RawData): Buffer | null {
   return null;
 }
 
-function tryParseJsonPayload(text: string): unknown | null {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
-}
-
 function decodeIncomingPayload(data: RawData): IncomingPayloadResult {
   if (typeof data === 'string') {
-    const jsonPayload = tryParseJsonPayload(data);
+    const jsonPayload = tryParseJson(data);
     if (jsonPayload === null) return { error: 'Invalid JSON' };
     return { payload: jsonPayload };
   }
@@ -54,7 +47,7 @@ function decodeIncomingPayload(data: RawData): IncomingPayloadResult {
     return { payload: protobufPayload };
   }
 
-  const fallbackJson = tryParseJsonPayload(binary.toString('utf8'));
+  const fallbackJson = tryParseJson(binary.toString('utf8'));
   if (fallbackJson !== null) {
     return { payload: fallbackJson };
   }
