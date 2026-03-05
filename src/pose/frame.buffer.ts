@@ -1,8 +1,8 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { PoseService } from './pose.service';
 import type { PoseFrame } from './types/pose.types';
-import { normalizeFrame } from './utils/pose.normalization';
 import { ClientStateMap } from './client-state.map';
+import { normalizeFrame } from './utils/pose.normalization';
 
 type ClientBufferState = {
   frames: PoseFrame[];

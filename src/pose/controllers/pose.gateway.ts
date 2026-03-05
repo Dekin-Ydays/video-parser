@@ -7,8 +7,8 @@ import type WebSocket from 'ws';
 import type { RawData } from 'ws';
 import { tryParseJson } from '../../utils';
 import { PoseService } from '../pose.service';
-import { decodePoseFrameProtobufBinary } from '../utils/pose.protobuf';
 import { FrameBufferService } from '../frame.buffer';
+import { decodePoseFrameProtobufBinary } from '../utils/pose.protobuf';
 
 type WelcomeMessage = {
   type: 'welcome';
