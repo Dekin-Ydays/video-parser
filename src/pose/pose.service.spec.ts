@@ -1,24 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PoseService } from './pose.service';
-import { PrismaService } from '../prisma.service';
+import { PoseRecordingSessionService } from './pose-recording-session.service';
+import { PoseVideoRepository } from './pose-video.repository';
 import { PoseFrame } from './types/pose.types';
 
 describe('PoseService', () => {
   let service: PoseService;
-  let prisma: PrismaService;
 
-  const mockPrismaService = {
-    video: {
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-    },
-    frame: {
-      create: jest.fn(),
-      count: jest.fn(),
-    },
+  const mockSessionService = {
+    startVideo: jest.fn(),
+    upsertLatest: jest.fn(),
+    removeClient: jest.fn(),
+    listClients: jest.fn(),
+    getLatest: jest.fn(),
+  };
+
+  const mockVideoRepository = {
+    listVideos: jest.fn(),
+    getVideoById: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -26,14 +25,17 @@ describe('PoseService', () => {
       providers: [
         PoseService,
         {
-          provide: PrismaService,
-          useValue: mockPrismaService,
+          provide: PoseRecordingSessionService,
+          useValue: mockSessionService,
+        },
+        {
+          provide: PoseVideoRepository,
+          useValue: mockVideoRepository,
         },
       ],
     }).compile();
 
     service = module.get<PoseService>(PoseService);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {
@@ -44,118 +46,105 @@ describe('PoseService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('removeClient', () => {
-    it('should buffer frames until startVideo completes', async () => {
-      const clientId = 'client-buffer';
-      const videoId = 'video-buffer';
+  describe('session delegation', () => {
+    it('delegates start/upsert/remove to session service', async () => {
       const frame: PoseFrame = {
         timestamp: 1,
         landmarks: [{ x: 0.1, y: 0.2, z: 0.3 }],
       };
 
-      let resolveVideoCreate: ((value: { id: string }) => void) | undefined;
-      mockPrismaService.video.create.mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            resolveVideoCreate = resolve;
-          }),
-      );
-      mockPrismaService.frame.create.mockResolvedValue({});
+      await service.startVideo('c1');
+      await service.upsertLatest('c1', frame);
+      await service.removeClient('c1');
 
-      const startPromise = service.startVideo(clientId);
-      await service.upsertLatest(clientId, frame);
-
-      expect(mockPrismaService.frame.create).not.toHaveBeenCalled();
-
-      resolveVideoCreate?.({ id: videoId });
-      await startPromise;
-      await Promise.resolve();
-
-      expect(mockPrismaService.frame.create).toHaveBeenCalledWith({
-        data: {
-          videoId,
-          data: frame,
-        },
-      });
+      expect(mockSessionService.startVideo).toHaveBeenCalledWith('c1');
+      expect(mockSessionService.upsertLatest).toHaveBeenCalledWith('c1', frame);
+      expect(mockSessionService.removeClient).toHaveBeenCalledWith('c1');
     });
 
-    it('should delete video if frame count is 0', async () => {
-      const clientId = 'client1';
-      const videoId = 'video1';
+    it('delegates listClients/getLatest to session service', () => {
+      const expectedClients = [{ clientId: 'c1', lastSeenAt: 123 }];
+      const expectedFrame: PoseFrame = {
+        timestamp: 123,
+        landmarks: [{ x: 0.1, y: 0.2 }],
+      };
 
-      // Simulate startVideo
-      mockPrismaService.video.create.mockResolvedValue({ id: videoId });
-      await service.startVideo(clientId);
+      mockSessionService.listClients.mockReturnValue(expectedClients);
+      mockSessionService.getLatest.mockReturnValue(expectedFrame);
 
-      // Mock frame count to be 0
-      mockPrismaService.frame.count.mockResolvedValue(0);
-      mockPrismaService.video.delete.mockResolvedValue({});
+      expect(service.listClients()).toEqual(expectedClients);
+      expect(service.getLatest('c1')).toEqual(expectedFrame);
+      expect(mockSessionService.getLatest).toHaveBeenCalledWith('c1');
+    });
+  });
 
-      await service.removeClient(clientId);
+  describe('video queries', () => {
+    it('returns empty array if listVideos fails', async () => {
+      mockVideoRepository.listVideos.mockRejectedValue(new Error('db down'));
 
-      expect(mockPrismaService.frame.count).toHaveBeenCalledWith({
-        where: { videoId },
-      });
-      expect(mockPrismaService.video.delete).toHaveBeenCalledWith({
-        where: { id: videoId },
-      });
-      expect(mockPrismaService.video.update).not.toHaveBeenCalled();
+      const videos = await service.listVideos();
+
+      expect(videos).toEqual([]);
     });
 
-    it('should update endTime if frame count is > 0', async () => {
-      const clientId = 'client2';
-      const videoId = 'video2';
-
-      // Simulate startVideo
-      mockPrismaService.video.create.mockResolvedValue({ id: videoId });
-      await service.startVideo(clientId);
-
-      // Mock frame count to be 5
-      mockPrismaService.frame.count.mockResolvedValue(5);
-      mockPrismaService.video.update.mockResolvedValue({});
-
-      await service.removeClient(clientId);
-
-      expect(mockPrismaService.frame.count).toHaveBeenCalledWith({
-        where: { videoId },
+    it('maps stored video data to comparator format', async () => {
+      mockVideoRepository.getVideoById.mockResolvedValue({
+        frames: [
+          { data: { timestamp: 1, landmarks: [{ x: 1, y: 2, z: 3 }] } },
+          { data: { timestamp: 2, landmarks: [{ x: 4, y: 5, z: 6 }] } },
+        ],
       });
-      expect(mockPrismaService.video.delete).not.toHaveBeenCalled();
-      expect(mockPrismaService.video.update).toHaveBeenCalledWith({
-        where: { id: videoId },
-        data: { endTime: expect.any(Date) },
+
+      const video = await service.getVideoById('v1');
+
+      expect(video).toEqual({
+        frames: [
+          { timestamp: 1, landmarks: [{ x: 1, y: 2, z: 3, visibility: undefined }] },
+          { timestamp: 2, landmarks: [{ x: 4, y: 5, z: 6, visibility: undefined }] },
+        ],
       });
     });
   });
 
   describe('compareVideos', () => {
-    it('should accept JSON-safe comparator config with object landmarkWeights', async () => {
-      const videoIdA = 'video-a';
-      const videoIdB = 'video-b';
+    it('accepts JSON-safe comparator config with object landmarkWeights', async () => {
+      const videoA = {
+        frames: [
+          {
+            data: {
+              timestamp: 1,
+              landmarks: Array.from({ length: 33 }, (_, index) => ({
+                x: index * 0.1,
+                y: index * 0.1,
+                z: index * 0.1,
+                visibility: 1,
+              })),
+            },
+          },
+        ],
+      };
 
-      const createFrameData = () => ({
-        timestamp: 1,
-        landmarks: Array.from({ length: 33 }, (_, index) => ({
-          x: index * 0.1,
-          y: index * 0.1,
-          z: index * 0.1,
-          visibility: 1,
-        })),
-      });
+      const videoB = {
+        frames: [
+          {
+            data: {
+              timestamp: 1,
+              landmarks: Array.from({ length: 33 }, (_, index) => ({
+                x: index * 0.1,
+                y: index * 0.1,
+                z: index * 0.1,
+                visibility: 1,
+              })),
+            },
+          },
+        ],
+      };
 
-      const frameDataA = createFrameData();
-      const frameDataB = createFrameData();
+      mockVideoRepository.getVideoById
+        .mockResolvedValueOnce(videoA)
+        .mockResolvedValueOnce(videoB);
 
-      mockPrismaService.video.findUnique
-        .mockResolvedValueOnce({
-          id: videoIdA,
-          frames: [{ data: frameDataA }],
-        })
-        .mockResolvedValueOnce({
-          id: videoIdB,
-          frames: [{ data: frameDataB }],
-        });
-
-      const result = await service.compareVideos(videoIdA, videoIdB, {
+      const result = await service.compareVideos('video-a', 'video-b', {
         landmarkWeights: {
           '11': 2,
           '12': 2,
