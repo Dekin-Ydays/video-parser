@@ -52,7 +52,8 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   Video: 'Video',
-  Frame: 'Frame'
+  Frame: 'Frame',
+  ComparisonResult: 'ComparisonResult'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -70,8 +71,19 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const VideoScalarFieldEnum = {
   id: 'id',
+  role: 'role',
+  storageKind: 'storageKind',
+  ownerId: 'ownerId',
+  bucket: 'bucket',
+  objectKey: 'objectKey',
+  mimeType: 'mimeType',
+  durationMs: 'durationMs',
+  thumbnailObjectKey: 'thumbnailObjectKey',
+  metadata: 'metadata',
   startTime: 'startTime',
-  endTime: 'endTime'
+  endTime: 'endTime',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type VideoScalarFieldEnum = (typeof VideoScalarFieldEnum)[keyof typeof VideoScalarFieldEnum]
@@ -87,6 +99,23 @@ export const FrameScalarFieldEnum = {
 export type FrameScalarFieldEnum = (typeof FrameScalarFieldEnum)[keyof typeof FrameScalarFieldEnum]
 
 
+export const ComparisonResultScalarFieldEnum = {
+  id: 'id',
+  referenceVideoId: 'referenceVideoId',
+  comparisonVideoId: 'comparisonVideoId',
+  overallScore: 'overallScore',
+  positionScore: 'positionScore',
+  angularScore: 'angularScore',
+  timingScore: 'timingScore',
+  frameScores: 'frameScores',
+  breakdown: 'breakdown',
+  algorithmVersion: 'algorithmVersion',
+  createdAt: 'createdAt'
+} as const
+
+export type ComparisonResultScalarFieldEnum = (typeof ComparisonResultScalarFieldEnum)[keyof typeof ComparisonResultScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -95,19 +124,19 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const NullableJsonNullValueInput = {
+  DbNull: 'DbNull',
+  JsonNull: 'JsonNull'
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
 export const JsonNullValueInput = {
   JsonNull: 'JsonNull'
 } as const
 
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
-
-
-export const NullsOrder = {
-  first: 'first',
-  last: 'last'
-} as const
-
-export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
 export const JsonNullValueFilter = {
@@ -125,4 +154,12 @@ export const QueryMode = {
 } as const
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 

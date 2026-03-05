@@ -47,3 +47,8 @@ export type Video = Prisma.VideoModel
  * 
  */
 export type Frame = Prisma.FrameModel
+/**
+ * Model ComparisonResult
+ * 
+ */
+export type ComparisonResult = Prisma.ComparisonResultModel
