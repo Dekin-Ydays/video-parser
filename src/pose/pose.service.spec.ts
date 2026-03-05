@@ -99,8 +99,14 @@ describe('PoseService', () => {
 
       expect(video).toEqual({
         frames: [
-          { timestamp: 1, landmarks: [{ x: 1, y: 2, z: 3, visibility: undefined }] },
-          { timestamp: 2, landmarks: [{ x: 4, y: 5, z: 6, visibility: undefined }] },
+          {
+            timestamp: 1,
+            landmarks: [{ x: 1, y: 2, z: 3, visibility: undefined }],
+          },
+          {
+            timestamp: 2,
+            landmarks: [{ x: 4, y: 5, z: 6, visibility: undefined }],
+          },
         ],
       });
     });

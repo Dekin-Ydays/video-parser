@@ -173,7 +173,10 @@ export class PoseService {
     return { frames };
   }
 
-  private mapStoredFrameToFrame(rawData: unknown, frameIndex: number): Frame | null {
+  private mapStoredFrameToFrame(
+    rawData: unknown,
+    frameIndex: number,
+  ): Frame | null {
     const data =
       rawData && typeof rawData === 'object'
         ? (rawData as Record<string, unknown>)
@@ -183,13 +186,18 @@ export class PoseService {
       return null;
     }
 
-    if (typeof data.timestamp !== 'number' || !Number.isFinite(data.timestamp)) {
+    if (
+      typeof data.timestamp !== 'number' ||
+      !Number.isFinite(data.timestamp)
+    ) {
       this.logger.warn(`Skipping frame ${frameIndex}: invalid timestamp`);
       return null;
     }
 
     if (!Array.isArray(data.landmarks)) {
-      this.logger.warn(`Skipping frame ${frameIndex}: landmarks is not an array`);
+      this.logger.warn(
+        `Skipping frame ${frameIndex}: landmarks is not an array`,
+      );
       return null;
     }
 

@@ -25,7 +25,9 @@ describe('PoseRecordingSessionService', () => {
       ],
     }).compile();
 
-    service = module.get<PoseRecordingSessionService>(PoseRecordingSessionService);
+    service = module.get<PoseRecordingSessionService>(
+      PoseRecordingSessionService,
+    );
   });
 
   afterEach(() => {
@@ -63,7 +65,10 @@ describe('PoseRecordingSessionService', () => {
       await startPromise;
       await new Promise((resolve) => setImmediate(resolve));
 
-      expect(mockVideoRepository.createFrame).toHaveBeenCalledWith(videoId, frame);
+      expect(mockVideoRepository.createFrame).toHaveBeenCalledWith(
+        videoId,
+        frame,
+      );
     });
 
     it('should delete video if frame count is 0', async () => {

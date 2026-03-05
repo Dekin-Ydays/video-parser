@@ -10,7 +10,9 @@ function isObject(value: unknown): value is ConfigObject {
 }
 
 function toFiniteNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : undefined;
 }
 
 function parseNormalization(
@@ -78,7 +80,9 @@ function parseLandmarkWeights(value: unknown): Map<number, number> | undefined {
   return undefined;
 }
 
-export function adaptComparatorConfig(input: unknown): ComparatorConfig | undefined {
+export function adaptComparatorConfig(
+  input: unknown,
+): ComparatorConfig | undefined {
   if (!isObject(input)) {
     return undefined;
   }

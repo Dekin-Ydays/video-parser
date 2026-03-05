@@ -135,7 +135,10 @@ export class PoseRecordingSessionService {
         try {
           await this.videoRepository.createFrame(videoId, frame);
         } catch (error) {
-          this.logger.error(`Failed to save frame for videoId=${videoId}`, error);
+          this.logger.error(
+            `Failed to save frame for videoId=${videoId}`,
+            error,
+          );
         }
       });
 
@@ -178,7 +181,10 @@ export class PoseRecordingSessionService {
         return videoId;
       })
       .catch((error) => {
-        this.logger.error(`Failed to start video for clientId=${clientId}`, error);
+        this.logger.error(
+          `Failed to start video for clientId=${clientId}`,
+          error,
+        );
         return null;
       })
       .finally(() => {
