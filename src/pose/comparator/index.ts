@@ -1,4 +1,5 @@
 export { PoseComparator } from './pose-comparator';
+export { adaptComparatorConfig } from './comparator-config.adapter';
 export {
   Landmark,
   Frame,

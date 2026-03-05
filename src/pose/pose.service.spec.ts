@@ -126,4 +126,45 @@ describe('PoseService', () => {
       });
     });
   });
+
+  describe('compareVideos', () => {
+    it('should accept JSON-safe comparator config with object landmarkWeights', async () => {
+      const videoIdA = 'video-a';
+      const videoIdB = 'video-b';
+
+      const createFrameData = () => ({
+        timestamp: 1,
+        landmarks: Array.from({ length: 33 }, (_, index) => ({
+          x: index * 0.1,
+          y: index * 0.1,
+          z: index * 0.1,
+          visibility: 1,
+        })),
+      });
+
+      const frameDataA = createFrameData();
+      const frameDataB = createFrameData();
+
+      mockPrismaService.video.findUnique
+        .mockResolvedValueOnce({
+          id: videoIdA,
+          frames: [{ data: frameDataA }],
+        })
+        .mockResolvedValueOnce({
+          id: videoIdB,
+          frames: [{ data: frameDataB }],
+        });
+
+      const result = await service.compareVideos(videoIdA, videoIdB, {
+        landmarkWeights: {
+          '11': 2,
+          '12': 2,
+        },
+        positionWeight: 0.7,
+      });
+
+      expect(result).not.toBeNull();
+      expect(result?.overallScore).toBeGreaterThan(0);
+    });
+  });
 });

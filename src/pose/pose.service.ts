@@ -3,7 +3,7 @@ import type { PoseFrame } from './types/pose.types';
 import { PrismaService } from '../prisma.service';
 import { Prisma } from '../generated/client/client';
 import {
-  ComparatorConfig,
+  adaptComparatorConfig,
   Frame,
   Landmark,
   PoseComparator,
@@ -214,7 +214,7 @@ export class PoseService {
   async compareVideos(
     referenceVideoId: string,
     comparisonVideoId: string,
-    config?: ComparatorConfig,
+    config?: unknown,
   ): Promise<ScoringResult | null> {
     try {
       const referenceVideo = await this.getVideoById(referenceVideoId);
@@ -227,7 +227,10 @@ export class PoseService {
         return null;
       }
 
-      const comparator = config ? new PoseComparator(config) : this.comparator;
+      const comparatorConfig = adaptComparatorConfig(config);
+      const comparator = comparatorConfig
+        ? new PoseComparator(comparatorConfig)
+        : this.comparator;
       const result = comparator.compareVideos(referenceVideo, comparisonVideo);
 
       this.logger.log(
