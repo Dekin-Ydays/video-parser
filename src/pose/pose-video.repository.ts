@@ -2,13 +2,29 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Prisma } from '../generated/client/client';
 import { PoseFrame } from './types/pose.types';
+import { ScoringResult } from './comparator';
 
 export interface StoredPoseFrameRecord {
   data: unknown;
 }
 
+export interface StoredVideoSummaryRecord {
+  id: string;
+  startTime: Date;
+  endTime: Date | null;
+  frameCount: number;
+  duration: number | null;
+}
+
 export interface StoredPoseVideoRecord {
   frames: StoredPoseFrameRecord[];
+}
+
+export interface CreateComparisonResultInput {
+  referenceVideoId: string;
+  comparisonVideoId: string;
+  result: ScoringResult;
+  algorithmVersion: string;
 }
 
 @Injectable()
@@ -59,15 +75,7 @@ export class PoseVideoRepository {
     });
   }
 
-  async listVideos(): Promise<
-    Array<{
-      id: string;
-      startTime: Date;
-      endTime: Date | null;
-      frameCount: number;
-      duration: number | null;
-    }>
-  > {
+  async listVideos(): Promise<StoredVideoSummaryRecord[]> {
     const videos = await this.prisma.video.findMany({
       include: {
         _count: {
@@ -110,5 +118,33 @@ export class PoseVideoRepository {
     return {
       frames: video.frames.map((frame) => ({ data: frame.data })),
     };
+  }
+
+  async createComparisonResult({
+    referenceVideoId,
+    comparisonVideoId,
+    result,
+    algorithmVersion,
+  }: CreateComparisonResultInput): Promise<string> {
+    const comparison = await this.prisma.comparisonResult.create({
+      data: {
+        referenceVideoId,
+        comparisonVideoId,
+        overallScore: result.overallScore,
+        positionScore: result.breakdown.positionScore,
+        angularScore: result.breakdown.angularScore,
+        timingScore: result.breakdown.timingScore,
+        frameScores: this.toJsonValue(result.frameScores),
+        breakdown: this.toJsonValue(result.breakdown),
+        algorithmVersion,
+      },
+      select: { id: true },
+    });
+
+    return comparison.id;
+  }
+
+  private toJsonValue(value: unknown): Prisma.InputJsonValue {
+    return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
   }
 }

@@ -385,7 +385,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   Video: 'Video',
-  Frame: 'Frame'
+  Frame: 'Frame',
+  ComparisonResult: 'ComparisonResult'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -401,7 +402,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "video" | "frame"
+    modelProps: "video" | "frame" | "comparisonResult"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -553,6 +554,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ComparisonResult: {
+      payload: Prisma.$ComparisonResultPayload<ExtArgs>
+      fields: Prisma.ComparisonResultFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ComparisonResultFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ComparisonResultPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ComparisonResultFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ComparisonResultPayload>
+        }
+        findFirst: {
+          args: Prisma.ComparisonResultFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ComparisonResultPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ComparisonResultFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ComparisonResultPayload>
+        }
+        findMany: {
+          args: Prisma.ComparisonResultFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ComparisonResultPayload>[]
+        }
+        create: {
+          args: Prisma.ComparisonResultCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ComparisonResultPayload>
+        }
+        createMany: {
+          args: Prisma.ComparisonResultCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ComparisonResultCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ComparisonResultPayload>[]
+        }
+        delete: {
+          args: Prisma.ComparisonResultDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ComparisonResultPayload>
+        }
+        update: {
+          args: Prisma.ComparisonResultUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ComparisonResultPayload>
+        }
+        deleteMany: {
+          args: Prisma.ComparisonResultDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ComparisonResultUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ComparisonResultUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ComparisonResultPayload>[]
+        }
+        upsert: {
+          args: Prisma.ComparisonResultUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ComparisonResultPayload>
+        }
+        aggregate: {
+          args: Prisma.ComparisonResultAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateComparisonResult>
+        }
+        groupBy: {
+          args: Prisma.ComparisonResultGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ComparisonResultGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ComparisonResultCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ComparisonResultCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -591,8 +666,19 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const VideoScalarFieldEnum = {
   id: 'id',
+  role: 'role',
+  storageKind: 'storageKind',
+  ownerId: 'ownerId',
+  bucket: 'bucket',
+  objectKey: 'objectKey',
+  mimeType: 'mimeType',
+  durationMs: 'durationMs',
+  thumbnailObjectKey: 'thumbnailObjectKey',
+  metadata: 'metadata',
   startTime: 'startTime',
-  endTime: 'endTime'
+  endTime: 'endTime',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type VideoScalarFieldEnum = (typeof VideoScalarFieldEnum)[keyof typeof VideoScalarFieldEnum]
@@ -608,6 +694,23 @@ export const FrameScalarFieldEnum = {
 export type FrameScalarFieldEnum = (typeof FrameScalarFieldEnum)[keyof typeof FrameScalarFieldEnum]
 
 
+export const ComparisonResultScalarFieldEnum = {
+  id: 'id',
+  referenceVideoId: 'referenceVideoId',
+  comparisonVideoId: 'comparisonVideoId',
+  overallScore: 'overallScore',
+  positionScore: 'positionScore',
+  angularScore: 'angularScore',
+  timingScore: 'timingScore',
+  frameScores: 'frameScores',
+  breakdown: 'breakdown',
+  algorithmVersion: 'algorithmVersion',
+  createdAt: 'createdAt'
+} as const
+
+export type ComparisonResultScalarFieldEnum = (typeof ComparisonResultScalarFieldEnum)[keyof typeof ComparisonResultScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -616,19 +719,19 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
 export const JsonNullValueInput = {
   JsonNull: JsonNull
 } as const
 
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
-
-
-export const NullsOrder = {
-  first: 'first',
-  last: 'last'
-} as const
-
-export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
 export const JsonNullValueFilter = {
@@ -648,6 +751,14 @@ export const QueryMode = {
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
 
 /**
  * Field references
@@ -662,9 +773,16 @@ export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 
 
 
 /**
- * Reference to a field of type 'DateTime'
+ * Reference to a field of type 'VideoRole'
  */
-export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
+export type EnumVideoRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'VideoRole'>
+    
+
+
+/**
+ * Reference to a field of type 'VideoStorageKind'
+ */
+export type EnumVideoStorageKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'VideoStorageKind'>
     
 
 
@@ -686,6 +804,13 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'DateTime'
+ */
+export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
     
 
 
@@ -792,6 +917,7 @@ export type PrismaClientOptions = ({
 export type GlobalOmitConfig = {
   video?: Prisma.VideoOmit
   frame?: Prisma.FrameOmit
+  comparisonResult?: Prisma.ComparisonResultOmit
 }
 
 /* Types for Logging */

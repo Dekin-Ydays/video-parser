@@ -10,4 +10,5 @@
  */
 export type * from './models/Video'
 export type * from './models/Frame'
+export type * from './models/ComparisonResult'
 export type * from './commonInputTypes'

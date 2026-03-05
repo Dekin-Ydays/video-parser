@@ -7,11 +7,35 @@ datasource db {
   provider = "sqlite"
 }
 
+enum VideoRole {
+  SESSION
+  REFERENCE
+  ATTEMPT
+}
+
+enum VideoStorageKind {
+  POSE_ONLY
+  MINIO_OBJECT
+}
+
 model Video {
-  id        String    @id @default(uuid())
-  startTime DateTime  @default(now())
-  endTime   DateTime?
-  frames    Frame[]
+  id                    String               @id @default(uuid())
+  role                  VideoRole            @default(SESSION)
+  storageKind           VideoStorageKind     @default(POSE_ONLY)
+  ownerId               String?
+  bucket                String?
+  objectKey             String?              @unique
+  mimeType              String?
+  durationMs            Int?
+  thumbnailObjectKey    String?
+  metadata              Json?
+  startTime             DateTime             @default(now())
+  endTime               DateTime?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  frames                Frame[]
+  referenceComparisons  ComparisonResult[]   @relation("ReferenceVideoComparisons")
+  attemptComparisons    ComparisonResult[]   @relation("AttemptVideoComparisons")
 }
 
 model Frame {
@@ -20,4 +44,25 @@ model Frame {
   videoId   String
   data      Json
   createdAt DateTime @default(now())
+}
+
+model ComparisonResult {
+  id                String   @id @default(uuid())
+  referenceVideoId  String
+  comparisonVideoId String
+  overallScore      Float
+  positionScore     Float
+  angularScore      Float
+  timingScore       Float
+  frameScores       Json
+  breakdown         Json
+  algorithmVersion  String
+  createdAt         DateTime @default(now())
+
+  referenceVideo    Video    @relation("ReferenceVideoComparisons", fields: [referenceVideoId], references: [id])
+  comparisonVideo   Video    @relation("AttemptVideoComparisons", fields: [comparisonVideoId], references: [id])
+
+  @@index([referenceVideoId])
+  @@index([comparisonVideoId])
+  @@index([referenceVideoId, comparisonVideoId, createdAt])
 }

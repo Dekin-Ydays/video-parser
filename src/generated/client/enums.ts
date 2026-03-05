@@ -9,7 +9,18 @@
 * 🟢 You can import this file directly.
 */
 
+export const VideoRole = {
+  SESSION: 'SESSION',
+  REFERENCE: 'REFERENCE',
+  ATTEMPT: 'ATTEMPT'
+} as const
+
+export type VideoRole = (typeof VideoRole)[keyof typeof VideoRole]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const VideoStorageKind = {
+  POSE_ONLY: 'POSE_ONLY',
+  MINIO_OBJECT: 'MINIO_OBJECT'
+} as const
+
+export type VideoStorageKind = (typeof VideoStorageKind)[keyof typeof VideoStorageKind]
