@@ -6,20 +6,13 @@ import type { IncomingMessage } from 'http';
 import type WebSocket from 'ws';
 import type { RawData } from 'ws';
 import { PoseService } from '../pose.service';
-import { normalizeFrame } from '../utils/pose.normalization';
 import { decodePoseFrameProtobufBinary } from '../utils/pose.protobuf';
+import { FrameBufferService } from '../frame.buffer';
 
 type WelcomeMessage = {
   type: 'welcome';
   clientId: string;
   serverTime: number;
-};
-
-type AckMessage = {
-  type: 'ack';
-  clientId: string;
-  receivedAt: number;
-  landmarkCount: number;
 };
 
 type ErrorMessage = {
@@ -75,7 +68,10 @@ export class PoseGateway {
   private readonly logger = new Logger(PoseGateway.name);
   private readonly clientIdBySocket = new WeakMap<WebSocket, string>();
 
-  public constructor(private readonly poseService: PoseService) {}
+  public constructor(
+    private readonly poseService: PoseService,
+    private readonly frameBufferService: FrameBufferService,
+  ) {}
 
   public handleConnection(client: WebSocket, request: IncomingMessage) {
     const clientId = randomUUID();
@@ -96,29 +92,38 @@ export class PoseGateway {
     client.on('message', (data) => this.onMessage(client, data));
   }
 
-  public handleDisconnect(client: WebSocket) {
+  public async handleDisconnect(client: WebSocket): Promise<void> {
     const clientId = this.clientIdBySocket.get(client);
-    if (clientId) this.poseService.removeClient(clientId);
+    this.clientIdBySocket.delete(client);
+
+    if (clientId) {
+      await this.frameBufferService.disconnectClient(clientId);
+      await this.poseService.removeClient(clientId);
+    }
     this.logger.log(`WS disconnected clientId=${clientId ?? 'unknown'}`);
   }
 
   private onMessage(client: WebSocket, data: RawData): void {
-    const clientId = this.clientIdBySocket.get(client) ?? 'unknown';
+    const clientId = this.clientIdBySocket.get(client);
+    if (!clientId) {
+      return;
+    }
 
     const decoded = decodeIncomingPayload(data);
     if ('error' in decoded) {
       return this.sendError(client, decoded.error);
     }
 
-    const frame = normalizeFrame(decoded.payload);
-    if (!frame) {
+    const accepted = this.frameBufferService.appendPayload(
+      clientId,
+      decoded.payload,
+    );
+    if (!accepted) {
       return this.sendError(
         client,
         'Invalid payload; expected protobuf PoseFrame landmarks (or JSON landmarks/poseLandmarks/points/data)',
       );
     }
-
-    this.poseService.upsertLatest(clientId, frame);
   }
 
   private sendError(client: WebSocket, message: string): void {

@@ -141,5 +141,45 @@ describe('PoseRecordingSessionService', () => {
 
       expect(mockVideoRepository.countFrames).toHaveBeenCalledWith(videoId);
     });
+
+    it('should ignore upserts after removeClient starts', async () => {
+      const clientId = 'client-closing';
+      const videoId = 'video-closing';
+      const frame1: PoseFrame = {
+        timestamp: 1,
+        landmarks: [{ x: 0.1, y: 0.2, z: 0.3 }],
+      };
+      const frame2: PoseFrame = {
+        timestamp: 2,
+        landmarks: [{ x: 0.4, y: 0.5, z: 0.6 }],
+      };
+
+      let resolveFrameCreate: (() => void) | undefined;
+      mockVideoRepository.createVideo.mockResolvedValue(videoId);
+      mockVideoRepository.createFrame.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveFrameCreate = () => resolve(undefined);
+          }),
+      );
+      mockVideoRepository.countFrames.mockResolvedValue(1);
+      mockVideoRepository.endVideo.mockResolvedValue(undefined);
+
+      await service.startVideo(clientId);
+      await service.upsertLatest(clientId, frame1);
+
+      const removePromise = service.removeClient(clientId);
+      await Promise.resolve();
+      await service.upsertLatest(clientId, frame2);
+
+      resolveFrameCreate?.();
+      await removePromise;
+
+      expect(mockVideoRepository.createFrame).toHaveBeenCalledTimes(1);
+      expect(mockVideoRepository.createFrame).toHaveBeenCalledWith(
+        videoId,
+        frame1,
+      );
+    });
   });
 });
