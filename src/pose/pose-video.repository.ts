@@ -24,11 +24,19 @@ export class PoseVideoRepository {
   }
 
   async createFrame(videoId: string, frame: PoseFrame): Promise<void> {
-    await this.prisma.frame.create({
-      data: {
+    await this.createFrames(videoId, [frame]);
+  }
+
+  async createFrames(videoId: string, frames: PoseFrame[]): Promise<void> {
+    if (frames.length === 0) {
+      return;
+    }
+
+    await this.prisma.frame.createMany({
+      data: frames.map((frame) => ({
         videoId,
         data: frame as unknown as Prisma.InputJsonValue,
-      },
+      })),
     });
   }
 
@@ -89,7 +97,7 @@ export class PoseVideoRepository {
       where: { id: videoId },
       include: {
         frames: {
-          orderBy: { createdAt: 'asc' },
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
           select: { data: true },
         },
       },

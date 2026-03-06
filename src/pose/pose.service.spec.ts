@@ -10,6 +10,7 @@ describe('PoseService', () => {
   const mockSessionService = {
     startVideo: jest.fn(),
     upsertLatest: jest.fn(),
+    upsertLatestBatch: jest.fn(),
     removeClient: jest.fn(),
     listClients: jest.fn(),
     getLatest: jest.fn(),
@@ -55,10 +56,14 @@ describe('PoseService', () => {
 
       await service.startVideo('c1');
       await service.upsertLatest('c1', frame);
+      await service.upsertLatestBatch('c1', [frame]);
       await service.removeClient('c1');
 
       expect(mockSessionService.startVideo).toHaveBeenCalledWith('c1');
       expect(mockSessionService.upsertLatest).toHaveBeenCalledWith('c1', frame);
+      expect(mockSessionService.upsertLatestBatch).toHaveBeenCalledWith('c1', [
+        frame,
+      ]);
       expect(mockSessionService.removeClient).toHaveBeenCalledWith('c1');
     });
 
