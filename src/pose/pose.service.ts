@@ -13,6 +13,7 @@ import {
   StoredPoseVideoRecord,
 } from './pose-video.repository';
 import { PoseRecordingSessionService } from './pose-recording-session.service';
+import { isRecord, stringifyError } from '../utils';
 
 export type CompareVideosErrorCode =
   | 'not_found'
@@ -189,7 +190,7 @@ export class PoseService {
       });
     } catch (error) {
       this.logger.warn(
-        `Comparison succeeded but result persistence failed for ref=${referenceVideoId} comp=${comparisonVideoId}: ${this.stringifyError(error)}`,
+        `Comparison succeeded but result persistence failed for ref=${referenceVideoId} comp=${comparisonVideoId}: ${stringifyError(error)}`,
       );
     }
   }
@@ -206,10 +207,7 @@ export class PoseService {
     rawData: unknown,
     frameIndex: number,
   ): Frame | null {
-    const data =
-      rawData && typeof rawData === 'object'
-        ? (rawData as Record<string, unknown>)
-        : null;
+    const data = isRecord(rawData) ? rawData : null;
     if (!data) {
       this.logger.warn(`Skipping frame ${frameIndex}: non-object data payload`);
       return null;
@@ -260,11 +258,11 @@ export class PoseService {
   }
 
   private mapStoredLandmark(rawLandmark: unknown): Landmark | null {
-    if (!rawLandmark || typeof rawLandmark !== 'object') {
+    if (!isRecord(rawLandmark)) {
       return null;
     }
 
-    const landmark = rawLandmark as Record<string, unknown>;
+    const landmark = rawLandmark;
     if (
       typeof landmark.x !== 'number' ||
       !Number.isFinite(landmark.x) ||
@@ -286,13 +284,5 @@ export class PoseService {
           ? landmark.visibility
           : undefined,
     };
-  }
-
-  private stringifyError(error: unknown): string {
-    if (error instanceof Error) {
-      return error.message;
-    }
-
-    return String(error);
   }
 }

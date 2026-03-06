@@ -1,8 +1,9 @@
 import type { MediapipeLandmark, PoseFrame } from '../types/pose.types';
+import { isRecord } from '../../utils';
 
 function isLandmark(value: unknown): value is MediapipeLandmark {
-  if (!value || typeof value !== 'object') return false;
-  const candidate = value as Record<string, unknown>;
+  if (!isRecord(value)) return false;
+  const candidate = value;
   return typeof candidate.x === 'number' && typeof candidate.y === 'number';
 }
 
@@ -21,26 +22,22 @@ function pickLandmarkList(value: unknown): unknown[] | null {
 
 export function normalizeFrame(payload: unknown): PoseFrame | null {
   const timestamp =
-    payload &&
-    typeof payload === 'object' &&
-    typeof (payload as any).timestamp === 'number'
-      ? (payload as any).timestamp
+    isRecord(payload) && typeof payload.timestamp === 'number'
+      ? payload.timestamp
       : Date.now();
 
   const rawType =
-    payload &&
-    typeof payload === 'object' &&
-    typeof (payload as any).type === 'string'
-      ? (payload as any).type
+    isRecord(payload) && typeof payload.type === 'string'
+      ? payload.type
       : undefined;
 
   const landmarksCandidate = Array.isArray(payload)
     ? payload
-    : payload && typeof payload === 'object'
-      ? ((payload as any).landmarks ??
-        (payload as any).poseLandmarks ??
-        (payload as any).points ??
-        (payload as any).data)
+    : isRecord(payload)
+      ? (payload.landmarks ??
+        payload.poseLandmarks ??
+        payload.points ??
+        payload.data)
       : null;
 
   const picked = pickLandmarkList(landmarksCandidate);

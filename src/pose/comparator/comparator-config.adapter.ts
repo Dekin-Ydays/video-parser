@@ -2,23 +2,14 @@ import {
   ComparatorConfig,
   NormalizationOptions,
 } from '../types/pose-comparison.types';
+import { isRecord, toFiniteNumber, UnknownRecord } from '../../utils';
 
-type ConfigObject = Record<string, unknown>;
-
-function isObject(value: unknown): value is ConfigObject {
-  return !!value && typeof value === 'object' && !Array.isArray(value);
-}
-
-function toFiniteNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? value
-    : undefined;
-}
+type ConfigObject = UnknownRecord;
 
 function parseNormalization(
   value: unknown,
 ): Partial<NormalizationOptions> | undefined {
-  if (!isObject(value)) {
+  if (!isRecord(value)) {
     return undefined;
   }
 
@@ -66,7 +57,7 @@ function parseLandmarkWeights(value: unknown): Map<number, number> | undefined {
     return result.size > 0 ? result : undefined;
   }
 
-  if (isObject(value)) {
+  if (isRecord(value)) {
     for (const [rawKey, rawWeight] of Object.entries(value)) {
       const key = Number(rawKey);
       const weight = toFiniteNumber(rawWeight);
@@ -83,7 +74,7 @@ function parseLandmarkWeights(value: unknown): Map<number, number> | undefined {
 export function adaptComparatorConfig(
   input: unknown,
 ): ComparatorConfig | undefined {
-  if (!isObject(input)) {
+  if (!isRecord(input)) {
     return undefined;
   }
 
