@@ -19,6 +19,7 @@ describe('PoseService', () => {
   const mockVideoRepository = {
     listVideos: jest.fn(),
     getVideoById: jest.fn(),
+    createComparisonResult: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -221,6 +222,42 @@ describe('PoseService', () => {
       if (result.ok) {
         expect(result.result.overallScore).toBeGreaterThan(0);
       }
+      expect(mockVideoRepository.createComparisonResult).toHaveBeenCalledWith(
+        expect.objectContaining({
+          referenceVideoId: 'video-a',
+          comparisonVideoId: 'video-b',
+          algorithmVersion: 'pose-comparator:v1',
+        }),
+      );
+    });
+
+    it('still returns a score when comparison result persistence fails', async () => {
+      const video = {
+        frames: [
+          {
+            data: {
+              timestamp: 1,
+              landmarks: Array.from({ length: 33 }, (_, index) => ({
+                x: index * 0.1,
+                y: index * 0.1,
+                z: index * 0.1,
+                visibility: 1,
+              })),
+            },
+          },
+        ],
+      };
+
+      mockVideoRepository.getVideoById
+        .mockResolvedValueOnce(video)
+        .mockResolvedValueOnce(video);
+      mockVideoRepository.createComparisonResult.mockRejectedValueOnce(
+        new Error('write failed'),
+      );
+
+      const result = await service.compareVideos('video-a', 'video-b');
+
+      expect(result.ok).toBe(true);
     });
 
     it('returns not_found when one or both videos are missing', async () => {

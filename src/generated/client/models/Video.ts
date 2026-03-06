@@ -20,46 +20,126 @@ export type VideoModel = runtime.Types.Result.DefaultSelection<Prisma.$VideoPayl
 
 export type AggregateVideo = {
   _count: VideoCountAggregateOutputType | null
+  _avg: VideoAvgAggregateOutputType | null
+  _sum: VideoSumAggregateOutputType | null
   _min: VideoMinAggregateOutputType | null
   _max: VideoMaxAggregateOutputType | null
 }
 
+export type VideoAvgAggregateOutputType = {
+  durationMs: number | null
+}
+
+export type VideoSumAggregateOutputType = {
+  durationMs: number | null
+}
+
 export type VideoMinAggregateOutputType = {
   id: string | null
+  role: $Enums.VideoRole | null
+  storageKind: $Enums.VideoStorageKind | null
+  ownerId: string | null
+  bucket: string | null
+  objectKey: string | null
+  mimeType: string | null
+  durationMs: number | null
+  thumbnailObjectKey: string | null
   startTime: Date | null
   endTime: Date | null
+  createdAt: Date | null
+  updatedAt: Date | null
 }
 
 export type VideoMaxAggregateOutputType = {
   id: string | null
+  role: $Enums.VideoRole | null
+  storageKind: $Enums.VideoStorageKind | null
+  ownerId: string | null
+  bucket: string | null
+  objectKey: string | null
+  mimeType: string | null
+  durationMs: number | null
+  thumbnailObjectKey: string | null
   startTime: Date | null
   endTime: Date | null
+  createdAt: Date | null
+  updatedAt: Date | null
 }
 
 export type VideoCountAggregateOutputType = {
   id: number
+  role: number
+  storageKind: number
+  ownerId: number
+  bucket: number
+  objectKey: number
+  mimeType: number
+  durationMs: number
+  thumbnailObjectKey: number
+  metadata: number
   startTime: number
   endTime: number
+  createdAt: number
+  updatedAt: number
   _all: number
 }
 
 
+export type VideoAvgAggregateInputType = {
+  durationMs?: true
+}
+
+export type VideoSumAggregateInputType = {
+  durationMs?: true
+}
+
 export type VideoMinAggregateInputType = {
   id?: true
+  role?: true
+  storageKind?: true
+  ownerId?: true
+  bucket?: true
+  objectKey?: true
+  mimeType?: true
+  durationMs?: true
+  thumbnailObjectKey?: true
   startTime?: true
   endTime?: true
+  createdAt?: true
+  updatedAt?: true
 }
 
 export type VideoMaxAggregateInputType = {
   id?: true
+  role?: true
+  storageKind?: true
+  ownerId?: true
+  bucket?: true
+  objectKey?: true
+  mimeType?: true
+  durationMs?: true
+  thumbnailObjectKey?: true
   startTime?: true
   endTime?: true
+  createdAt?: true
+  updatedAt?: true
 }
 
 export type VideoCountAggregateInputType = {
   id?: true
+  role?: true
+  storageKind?: true
+  ownerId?: true
+  bucket?: true
+  objectKey?: true
+  mimeType?: true
+  durationMs?: true
+  thumbnailObjectKey?: true
+  metadata?: true
   startTime?: true
   endTime?: true
+  createdAt?: true
+  updatedAt?: true
   _all?: true
 }
 
@@ -101,6 +181,18 @@ export type VideoAggregateArgs<ExtArgs extends runtime.Types.Extensions.Internal
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: VideoAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: VideoSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: VideoMinAggregateInputType
@@ -131,15 +223,30 @@ export type VideoGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   _count?: VideoCountAggregateInputType | true
+  _avg?: VideoAvgAggregateInputType
+  _sum?: VideoSumAggregateInputType
   _min?: VideoMinAggregateInputType
   _max?: VideoMaxAggregateInputType
 }
 
 export type VideoGroupByOutputType = {
   id: string
+  role: $Enums.VideoRole
+  storageKind: $Enums.VideoStorageKind
+  ownerId: string | null
+  bucket: string | null
+  objectKey: string | null
+  mimeType: string | null
+  durationMs: number | null
+  thumbnailObjectKey: string | null
+  metadata: runtime.JsonValue | null
   startTime: Date
   endTime: Date | null
+  createdAt: Date
+  updatedAt: Date
   _count: VideoCountAggregateOutputType | null
+  _avg: VideoAvgAggregateOutputType | null
+  _sum: VideoSumAggregateOutputType | null
   _min: VideoMinAggregateOutputType | null
   _max: VideoMaxAggregateOutputType | null
 }
@@ -164,35 +271,87 @@ export type VideoWhereInput = {
   OR?: Prisma.VideoWhereInput[]
   NOT?: Prisma.VideoWhereInput | Prisma.VideoWhereInput[]
   id?: Prisma.StringFilter<"Video"> | string
+  role?: Prisma.EnumVideoRoleFilter<"Video"> | $Enums.VideoRole
+  storageKind?: Prisma.EnumVideoStorageKindFilter<"Video"> | $Enums.VideoStorageKind
+  ownerId?: Prisma.StringNullableFilter<"Video"> | string | null
+  bucket?: Prisma.StringNullableFilter<"Video"> | string | null
+  objectKey?: Prisma.StringNullableFilter<"Video"> | string | null
+  mimeType?: Prisma.StringNullableFilter<"Video"> | string | null
+  durationMs?: Prisma.IntNullableFilter<"Video"> | number | null
+  thumbnailObjectKey?: Prisma.StringNullableFilter<"Video"> | string | null
+  metadata?: Prisma.JsonNullableFilter<"Video">
   startTime?: Prisma.DateTimeFilter<"Video"> | Date | string
   endTime?: Prisma.DateTimeNullableFilter<"Video"> | Date | string | null
+  createdAt?: Prisma.DateTimeFilter<"Video"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Video"> | Date | string
   frames?: Prisma.FrameListRelationFilter
+  referenceComparisons?: Prisma.ComparisonResultListRelationFilter
+  attemptComparisons?: Prisma.ComparisonResultListRelationFilter
 }
 
 export type VideoOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  role?: Prisma.SortOrder
+  storageKind?: Prisma.SortOrder
+  ownerId?: Prisma.SortOrderInput | Prisma.SortOrder
+  bucket?: Prisma.SortOrderInput | Prisma.SortOrder
+  objectKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  mimeType?: Prisma.SortOrderInput | Prisma.SortOrder
+  durationMs?: Prisma.SortOrderInput | Prisma.SortOrder
+  thumbnailObjectKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  metadata?: Prisma.SortOrderInput | Prisma.SortOrder
   startTime?: Prisma.SortOrder
   endTime?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   frames?: Prisma.FrameOrderByRelationAggregateInput
+  referenceComparisons?: Prisma.ComparisonResultOrderByRelationAggregateInput
+  attemptComparisons?: Prisma.ComparisonResultOrderByRelationAggregateInput
 }
 
 export type VideoWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  objectKey?: string
   AND?: Prisma.VideoWhereInput | Prisma.VideoWhereInput[]
   OR?: Prisma.VideoWhereInput[]
   NOT?: Prisma.VideoWhereInput | Prisma.VideoWhereInput[]
+  role?: Prisma.EnumVideoRoleFilter<"Video"> | $Enums.VideoRole
+  storageKind?: Prisma.EnumVideoStorageKindFilter<"Video"> | $Enums.VideoStorageKind
+  ownerId?: Prisma.StringNullableFilter<"Video"> | string | null
+  bucket?: Prisma.StringNullableFilter<"Video"> | string | null
+  mimeType?: Prisma.StringNullableFilter<"Video"> | string | null
+  durationMs?: Prisma.IntNullableFilter<"Video"> | number | null
+  thumbnailObjectKey?: Prisma.StringNullableFilter<"Video"> | string | null
+  metadata?: Prisma.JsonNullableFilter<"Video">
   startTime?: Prisma.DateTimeFilter<"Video"> | Date | string
   endTime?: Prisma.DateTimeNullableFilter<"Video"> | Date | string | null
+  createdAt?: Prisma.DateTimeFilter<"Video"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Video"> | Date | string
   frames?: Prisma.FrameListRelationFilter
-}, "id">
+  referenceComparisons?: Prisma.ComparisonResultListRelationFilter
+  attemptComparisons?: Prisma.ComparisonResultListRelationFilter
+}, "id" | "objectKey">
 
 export type VideoOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  role?: Prisma.SortOrder
+  storageKind?: Prisma.SortOrder
+  ownerId?: Prisma.SortOrderInput | Prisma.SortOrder
+  bucket?: Prisma.SortOrderInput | Prisma.SortOrder
+  objectKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  mimeType?: Prisma.SortOrderInput | Prisma.SortOrder
+  durationMs?: Prisma.SortOrderInput | Prisma.SortOrder
+  thumbnailObjectKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  metadata?: Prisma.SortOrderInput | Prisma.SortOrder
   startTime?: Prisma.SortOrder
   endTime?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   _count?: Prisma.VideoCountOrderByAggregateInput
+  _avg?: Prisma.VideoAvgOrderByAggregateInput
   _max?: Prisma.VideoMaxOrderByAggregateInput
   _min?: Prisma.VideoMinOrderByAggregateInput
+  _sum?: Prisma.VideoSumOrderByAggregateInput
 }
 
 export type VideoScalarWhereWithAggregatesInput = {
@@ -200,72 +359,207 @@ export type VideoScalarWhereWithAggregatesInput = {
   OR?: Prisma.VideoScalarWhereWithAggregatesInput[]
   NOT?: Prisma.VideoScalarWhereWithAggregatesInput | Prisma.VideoScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Video"> | string
+  role?: Prisma.EnumVideoRoleWithAggregatesFilter<"Video"> | $Enums.VideoRole
+  storageKind?: Prisma.EnumVideoStorageKindWithAggregatesFilter<"Video"> | $Enums.VideoStorageKind
+  ownerId?: Prisma.StringNullableWithAggregatesFilter<"Video"> | string | null
+  bucket?: Prisma.StringNullableWithAggregatesFilter<"Video"> | string | null
+  objectKey?: Prisma.StringNullableWithAggregatesFilter<"Video"> | string | null
+  mimeType?: Prisma.StringNullableWithAggregatesFilter<"Video"> | string | null
+  durationMs?: Prisma.IntNullableWithAggregatesFilter<"Video"> | number | null
+  thumbnailObjectKey?: Prisma.StringNullableWithAggregatesFilter<"Video"> | string | null
+  metadata?: Prisma.JsonNullableWithAggregatesFilter<"Video">
   startTime?: Prisma.DateTimeWithAggregatesFilter<"Video"> | Date | string
   endTime?: Prisma.DateTimeNullableWithAggregatesFilter<"Video"> | Date | string | null
+  createdAt?: Prisma.DateTimeWithAggregatesFilter<"Video"> | Date | string
+  updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Video"> | Date | string
 }
 
 export type VideoCreateInput = {
   id?: string
+  role?: $Enums.VideoRole
+  storageKind?: $Enums.VideoStorageKind
+  ownerId?: string | null
+  bucket?: string | null
+  objectKey?: string | null
+  mimeType?: string | null
+  durationMs?: number | null
+  thumbnailObjectKey?: string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startTime?: Date | string
   endTime?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   frames?: Prisma.FrameCreateNestedManyWithoutVideoInput
+  referenceComparisons?: Prisma.ComparisonResultCreateNestedManyWithoutReferenceVideoInput
+  attemptComparisons?: Prisma.ComparisonResultCreateNestedManyWithoutComparisonVideoInput
 }
 
 export type VideoUncheckedCreateInput = {
   id?: string
+  role?: $Enums.VideoRole
+  storageKind?: $Enums.VideoStorageKind
+  ownerId?: string | null
+  bucket?: string | null
+  objectKey?: string | null
+  mimeType?: string | null
+  durationMs?: number | null
+  thumbnailObjectKey?: string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startTime?: Date | string
   endTime?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   frames?: Prisma.FrameUncheckedCreateNestedManyWithoutVideoInput
+  referenceComparisons?: Prisma.ComparisonResultUncheckedCreateNestedManyWithoutReferenceVideoInput
+  attemptComparisons?: Prisma.ComparisonResultUncheckedCreateNestedManyWithoutComparisonVideoInput
 }
 
 export type VideoUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumVideoRoleFieldUpdateOperationsInput | $Enums.VideoRole
+  storageKind?: Prisma.EnumVideoStorageKindFieldUpdateOperationsInput | $Enums.VideoStorageKind
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  objectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  durationMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  thumbnailObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   frames?: Prisma.FrameUpdateManyWithoutVideoNestedInput
+  referenceComparisons?: Prisma.ComparisonResultUpdateManyWithoutReferenceVideoNestedInput
+  attemptComparisons?: Prisma.ComparisonResultUpdateManyWithoutComparisonVideoNestedInput
 }
 
 export type VideoUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumVideoRoleFieldUpdateOperationsInput | $Enums.VideoRole
+  storageKind?: Prisma.EnumVideoStorageKindFieldUpdateOperationsInput | $Enums.VideoStorageKind
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  objectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  durationMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  thumbnailObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   frames?: Prisma.FrameUncheckedUpdateManyWithoutVideoNestedInput
+  referenceComparisons?: Prisma.ComparisonResultUncheckedUpdateManyWithoutReferenceVideoNestedInput
+  attemptComparisons?: Prisma.ComparisonResultUncheckedUpdateManyWithoutComparisonVideoNestedInput
 }
 
 export type VideoCreateManyInput = {
   id?: string
+  role?: $Enums.VideoRole
+  storageKind?: $Enums.VideoStorageKind
+  ownerId?: string | null
+  bucket?: string | null
+  objectKey?: string | null
+  mimeType?: string | null
+  durationMs?: number | null
+  thumbnailObjectKey?: string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startTime?: Date | string
   endTime?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type VideoUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumVideoRoleFieldUpdateOperationsInput | $Enums.VideoRole
+  storageKind?: Prisma.EnumVideoStorageKindFieldUpdateOperationsInput | $Enums.VideoStorageKind
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  objectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  durationMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  thumbnailObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type VideoUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumVideoRoleFieldUpdateOperationsInput | $Enums.VideoRole
+  storageKind?: Prisma.EnumVideoStorageKindFieldUpdateOperationsInput | $Enums.VideoStorageKind
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  objectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  durationMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  thumbnailObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type VideoCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  role?: Prisma.SortOrder
+  storageKind?: Prisma.SortOrder
+  ownerId?: Prisma.SortOrder
+  bucket?: Prisma.SortOrder
+  objectKey?: Prisma.SortOrder
+  mimeType?: Prisma.SortOrder
+  durationMs?: Prisma.SortOrder
+  thumbnailObjectKey?: Prisma.SortOrder
+  metadata?: Prisma.SortOrder
   startTime?: Prisma.SortOrder
   endTime?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+}
+
+export type VideoAvgOrderByAggregateInput = {
+  durationMs?: Prisma.SortOrder
 }
 
 export type VideoMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  role?: Prisma.SortOrder
+  storageKind?: Prisma.SortOrder
+  ownerId?: Prisma.SortOrder
+  bucket?: Prisma.SortOrder
+  objectKey?: Prisma.SortOrder
+  mimeType?: Prisma.SortOrder
+  durationMs?: Prisma.SortOrder
+  thumbnailObjectKey?: Prisma.SortOrder
   startTime?: Prisma.SortOrder
   endTime?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
 export type VideoMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  role?: Prisma.SortOrder
+  storageKind?: Prisma.SortOrder
+  ownerId?: Prisma.SortOrder
+  bucket?: Prisma.SortOrder
+  objectKey?: Prisma.SortOrder
+  mimeType?: Prisma.SortOrder
+  durationMs?: Prisma.SortOrder
+  thumbnailObjectKey?: Prisma.SortOrder
   startTime?: Prisma.SortOrder
   endTime?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+}
+
+export type VideoSumOrderByAggregateInput = {
+  durationMs?: Prisma.SortOrder
 }
 
 export type VideoScalarRelationFilter = {
@@ -275,6 +569,26 @@ export type VideoScalarRelationFilter = {
 
 export type StringFieldUpdateOperationsInput = {
   set?: string
+}
+
+export type EnumVideoRoleFieldUpdateOperationsInput = {
+  set?: $Enums.VideoRole
+}
+
+export type EnumVideoStorageKindFieldUpdateOperationsInput = {
+  set?: $Enums.VideoStorageKind
+}
+
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
@@ -299,16 +613,70 @@ export type VideoUpdateOneRequiredWithoutFramesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.VideoUpdateToOneWithWhereWithoutFramesInput, Prisma.VideoUpdateWithoutFramesInput>, Prisma.VideoUncheckedUpdateWithoutFramesInput>
 }
 
+export type VideoCreateNestedOneWithoutReferenceComparisonsInput = {
+  create?: Prisma.XOR<Prisma.VideoCreateWithoutReferenceComparisonsInput, Prisma.VideoUncheckedCreateWithoutReferenceComparisonsInput>
+  connectOrCreate?: Prisma.VideoCreateOrConnectWithoutReferenceComparisonsInput
+  connect?: Prisma.VideoWhereUniqueInput
+}
+
+export type VideoCreateNestedOneWithoutAttemptComparisonsInput = {
+  create?: Prisma.XOR<Prisma.VideoCreateWithoutAttemptComparisonsInput, Prisma.VideoUncheckedCreateWithoutAttemptComparisonsInput>
+  connectOrCreate?: Prisma.VideoCreateOrConnectWithoutAttemptComparisonsInput
+  connect?: Prisma.VideoWhereUniqueInput
+}
+
+export type VideoUpdateOneRequiredWithoutReferenceComparisonsNestedInput = {
+  create?: Prisma.XOR<Prisma.VideoCreateWithoutReferenceComparisonsInput, Prisma.VideoUncheckedCreateWithoutReferenceComparisonsInput>
+  connectOrCreate?: Prisma.VideoCreateOrConnectWithoutReferenceComparisonsInput
+  upsert?: Prisma.VideoUpsertWithoutReferenceComparisonsInput
+  connect?: Prisma.VideoWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VideoUpdateToOneWithWhereWithoutReferenceComparisonsInput, Prisma.VideoUpdateWithoutReferenceComparisonsInput>, Prisma.VideoUncheckedUpdateWithoutReferenceComparisonsInput>
+}
+
+export type VideoUpdateOneRequiredWithoutAttemptComparisonsNestedInput = {
+  create?: Prisma.XOR<Prisma.VideoCreateWithoutAttemptComparisonsInput, Prisma.VideoUncheckedCreateWithoutAttemptComparisonsInput>
+  connectOrCreate?: Prisma.VideoCreateOrConnectWithoutAttemptComparisonsInput
+  upsert?: Prisma.VideoUpsertWithoutAttemptComparisonsInput
+  connect?: Prisma.VideoWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VideoUpdateToOneWithWhereWithoutAttemptComparisonsInput, Prisma.VideoUpdateWithoutAttemptComparisonsInput>, Prisma.VideoUncheckedUpdateWithoutAttemptComparisonsInput>
+}
+
 export type VideoCreateWithoutFramesInput = {
   id?: string
+  role?: $Enums.VideoRole
+  storageKind?: $Enums.VideoStorageKind
+  ownerId?: string | null
+  bucket?: string | null
+  objectKey?: string | null
+  mimeType?: string | null
+  durationMs?: number | null
+  thumbnailObjectKey?: string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startTime?: Date | string
   endTime?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  referenceComparisons?: Prisma.ComparisonResultCreateNestedManyWithoutReferenceVideoInput
+  attemptComparisons?: Prisma.ComparisonResultCreateNestedManyWithoutComparisonVideoInput
 }
 
 export type VideoUncheckedCreateWithoutFramesInput = {
   id?: string
+  role?: $Enums.VideoRole
+  storageKind?: $Enums.VideoStorageKind
+  ownerId?: string | null
+  bucket?: string | null
+  objectKey?: string | null
+  mimeType?: string | null
+  durationMs?: number | null
+  thumbnailObjectKey?: string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startTime?: Date | string
   endTime?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  referenceComparisons?: Prisma.ComparisonResultUncheckedCreateNestedManyWithoutReferenceVideoInput
+  attemptComparisons?: Prisma.ComparisonResultUncheckedCreateNestedManyWithoutComparisonVideoInput
 }
 
 export type VideoCreateOrConnectWithoutFramesInput = {
@@ -329,14 +697,224 @@ export type VideoUpdateToOneWithWhereWithoutFramesInput = {
 
 export type VideoUpdateWithoutFramesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumVideoRoleFieldUpdateOperationsInput | $Enums.VideoRole
+  storageKind?: Prisma.EnumVideoStorageKindFieldUpdateOperationsInput | $Enums.VideoStorageKind
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  objectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  durationMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  thumbnailObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referenceComparisons?: Prisma.ComparisonResultUpdateManyWithoutReferenceVideoNestedInput
+  attemptComparisons?: Prisma.ComparisonResultUpdateManyWithoutComparisonVideoNestedInput
 }
 
 export type VideoUncheckedUpdateWithoutFramesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumVideoRoleFieldUpdateOperationsInput | $Enums.VideoRole
+  storageKind?: Prisma.EnumVideoStorageKindFieldUpdateOperationsInput | $Enums.VideoStorageKind
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  objectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  durationMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  thumbnailObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referenceComparisons?: Prisma.ComparisonResultUncheckedUpdateManyWithoutReferenceVideoNestedInput
+  attemptComparisons?: Prisma.ComparisonResultUncheckedUpdateManyWithoutComparisonVideoNestedInput
+}
+
+export type VideoCreateWithoutReferenceComparisonsInput = {
+  id?: string
+  role?: $Enums.VideoRole
+  storageKind?: $Enums.VideoStorageKind
+  ownerId?: string | null
+  bucket?: string | null
+  objectKey?: string | null
+  mimeType?: string | null
+  durationMs?: number | null
+  thumbnailObjectKey?: string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startTime?: Date | string
+  endTime?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  frames?: Prisma.FrameCreateNestedManyWithoutVideoInput
+  attemptComparisons?: Prisma.ComparisonResultCreateNestedManyWithoutComparisonVideoInput
+}
+
+export type VideoUncheckedCreateWithoutReferenceComparisonsInput = {
+  id?: string
+  role?: $Enums.VideoRole
+  storageKind?: $Enums.VideoStorageKind
+  ownerId?: string | null
+  bucket?: string | null
+  objectKey?: string | null
+  mimeType?: string | null
+  durationMs?: number | null
+  thumbnailObjectKey?: string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startTime?: Date | string
+  endTime?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  frames?: Prisma.FrameUncheckedCreateNestedManyWithoutVideoInput
+  attemptComparisons?: Prisma.ComparisonResultUncheckedCreateNestedManyWithoutComparisonVideoInput
+}
+
+export type VideoCreateOrConnectWithoutReferenceComparisonsInput = {
+  where: Prisma.VideoWhereUniqueInput
+  create: Prisma.XOR<Prisma.VideoCreateWithoutReferenceComparisonsInput, Prisma.VideoUncheckedCreateWithoutReferenceComparisonsInput>
+}
+
+export type VideoCreateWithoutAttemptComparisonsInput = {
+  id?: string
+  role?: $Enums.VideoRole
+  storageKind?: $Enums.VideoStorageKind
+  ownerId?: string | null
+  bucket?: string | null
+  objectKey?: string | null
+  mimeType?: string | null
+  durationMs?: number | null
+  thumbnailObjectKey?: string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startTime?: Date | string
+  endTime?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  frames?: Prisma.FrameCreateNestedManyWithoutVideoInput
+  referenceComparisons?: Prisma.ComparisonResultCreateNestedManyWithoutReferenceVideoInput
+}
+
+export type VideoUncheckedCreateWithoutAttemptComparisonsInput = {
+  id?: string
+  role?: $Enums.VideoRole
+  storageKind?: $Enums.VideoStorageKind
+  ownerId?: string | null
+  bucket?: string | null
+  objectKey?: string | null
+  mimeType?: string | null
+  durationMs?: number | null
+  thumbnailObjectKey?: string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startTime?: Date | string
+  endTime?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  frames?: Prisma.FrameUncheckedCreateNestedManyWithoutVideoInput
+  referenceComparisons?: Prisma.ComparisonResultUncheckedCreateNestedManyWithoutReferenceVideoInput
+}
+
+export type VideoCreateOrConnectWithoutAttemptComparisonsInput = {
+  where: Prisma.VideoWhereUniqueInput
+  create: Prisma.XOR<Prisma.VideoCreateWithoutAttemptComparisonsInput, Prisma.VideoUncheckedCreateWithoutAttemptComparisonsInput>
+}
+
+export type VideoUpsertWithoutReferenceComparisonsInput = {
+  update: Prisma.XOR<Prisma.VideoUpdateWithoutReferenceComparisonsInput, Prisma.VideoUncheckedUpdateWithoutReferenceComparisonsInput>
+  create: Prisma.XOR<Prisma.VideoCreateWithoutReferenceComparisonsInput, Prisma.VideoUncheckedCreateWithoutReferenceComparisonsInput>
+  where?: Prisma.VideoWhereInput
+}
+
+export type VideoUpdateToOneWithWhereWithoutReferenceComparisonsInput = {
+  where?: Prisma.VideoWhereInput
+  data: Prisma.XOR<Prisma.VideoUpdateWithoutReferenceComparisonsInput, Prisma.VideoUncheckedUpdateWithoutReferenceComparisonsInput>
+}
+
+export type VideoUpdateWithoutReferenceComparisonsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumVideoRoleFieldUpdateOperationsInput | $Enums.VideoRole
+  storageKind?: Prisma.EnumVideoStorageKindFieldUpdateOperationsInput | $Enums.VideoStorageKind
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  objectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  durationMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  thumbnailObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  frames?: Prisma.FrameUpdateManyWithoutVideoNestedInput
+  attemptComparisons?: Prisma.ComparisonResultUpdateManyWithoutComparisonVideoNestedInput
+}
+
+export type VideoUncheckedUpdateWithoutReferenceComparisonsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumVideoRoleFieldUpdateOperationsInput | $Enums.VideoRole
+  storageKind?: Prisma.EnumVideoStorageKindFieldUpdateOperationsInput | $Enums.VideoStorageKind
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  objectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  durationMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  thumbnailObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  frames?: Prisma.FrameUncheckedUpdateManyWithoutVideoNestedInput
+  attemptComparisons?: Prisma.ComparisonResultUncheckedUpdateManyWithoutComparisonVideoNestedInput
+}
+
+export type VideoUpsertWithoutAttemptComparisonsInput = {
+  update: Prisma.XOR<Prisma.VideoUpdateWithoutAttemptComparisonsInput, Prisma.VideoUncheckedUpdateWithoutAttemptComparisonsInput>
+  create: Prisma.XOR<Prisma.VideoCreateWithoutAttemptComparisonsInput, Prisma.VideoUncheckedCreateWithoutAttemptComparisonsInput>
+  where?: Prisma.VideoWhereInput
+}
+
+export type VideoUpdateToOneWithWhereWithoutAttemptComparisonsInput = {
+  where?: Prisma.VideoWhereInput
+  data: Prisma.XOR<Prisma.VideoUpdateWithoutAttemptComparisonsInput, Prisma.VideoUncheckedUpdateWithoutAttemptComparisonsInput>
+}
+
+export type VideoUpdateWithoutAttemptComparisonsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumVideoRoleFieldUpdateOperationsInput | $Enums.VideoRole
+  storageKind?: Prisma.EnumVideoStorageKindFieldUpdateOperationsInput | $Enums.VideoStorageKind
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  objectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  durationMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  thumbnailObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  frames?: Prisma.FrameUpdateManyWithoutVideoNestedInput
+  referenceComparisons?: Prisma.ComparisonResultUpdateManyWithoutReferenceVideoNestedInput
+}
+
+export type VideoUncheckedUpdateWithoutAttemptComparisonsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumVideoRoleFieldUpdateOperationsInput | $Enums.VideoRole
+  storageKind?: Prisma.EnumVideoStorageKindFieldUpdateOperationsInput | $Enums.VideoStorageKind
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bucket?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  objectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  durationMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  thumbnailObjectKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  frames?: Prisma.FrameUncheckedUpdateManyWithoutVideoNestedInput
+  referenceComparisons?: Prisma.ComparisonResultUncheckedUpdateManyWithoutReferenceVideoNestedInput
 }
 
 
@@ -346,10 +924,14 @@ export type VideoUncheckedUpdateWithoutFramesInput = {
 
 export type VideoCountOutputType = {
   frames: number
+  referenceComparisons: number
+  attemptComparisons: number
 }
 
 export type VideoCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   frames?: boolean | VideoCountOutputTypeCountFramesArgs
+  referenceComparisons?: boolean | VideoCountOutputTypeCountReferenceComparisonsArgs
+  attemptComparisons?: boolean | VideoCountOutputTypeCountAttemptComparisonsArgs
 }
 
 /**
@@ -369,36 +951,98 @@ export type VideoCountOutputTypeCountFramesArgs<ExtArgs extends runtime.Types.Ex
   where?: Prisma.FrameWhereInput
 }
 
+/**
+ * VideoCountOutputType without action
+ */
+export type VideoCountOutputTypeCountReferenceComparisonsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ComparisonResultWhereInput
+}
+
+/**
+ * VideoCountOutputType without action
+ */
+export type VideoCountOutputTypeCountAttemptComparisonsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ComparisonResultWhereInput
+}
+
 
 export type VideoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  role?: boolean
+  storageKind?: boolean
+  ownerId?: boolean
+  bucket?: boolean
+  objectKey?: boolean
+  mimeType?: boolean
+  durationMs?: boolean
+  thumbnailObjectKey?: boolean
+  metadata?: boolean
   startTime?: boolean
   endTime?: boolean
+  createdAt?: boolean
+  updatedAt?: boolean
   frames?: boolean | Prisma.Video$framesArgs<ExtArgs>
+  referenceComparisons?: boolean | Prisma.Video$referenceComparisonsArgs<ExtArgs>
+  attemptComparisons?: boolean | Prisma.Video$attemptComparisonsArgs<ExtArgs>
   _count?: boolean | Prisma.VideoCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["video"]>
 
 export type VideoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  role?: boolean
+  storageKind?: boolean
+  ownerId?: boolean
+  bucket?: boolean
+  objectKey?: boolean
+  mimeType?: boolean
+  durationMs?: boolean
+  thumbnailObjectKey?: boolean
+  metadata?: boolean
   startTime?: boolean
   endTime?: boolean
+  createdAt?: boolean
+  updatedAt?: boolean
 }, ExtArgs["result"]["video"]>
 
 export type VideoSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  role?: boolean
+  storageKind?: boolean
+  ownerId?: boolean
+  bucket?: boolean
+  objectKey?: boolean
+  mimeType?: boolean
+  durationMs?: boolean
+  thumbnailObjectKey?: boolean
+  metadata?: boolean
   startTime?: boolean
   endTime?: boolean
+  createdAt?: boolean
+  updatedAt?: boolean
 }, ExtArgs["result"]["video"]>
 
 export type VideoSelectScalar = {
   id?: boolean
+  role?: boolean
+  storageKind?: boolean
+  ownerId?: boolean
+  bucket?: boolean
+  objectKey?: boolean
+  mimeType?: boolean
+  durationMs?: boolean
+  thumbnailObjectKey?: boolean
+  metadata?: boolean
   startTime?: boolean
   endTime?: boolean
+  createdAt?: boolean
+  updatedAt?: boolean
 }
 
-export type VideoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "startTime" | "endTime", ExtArgs["result"]["video"]>
+export type VideoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "role" | "storageKind" | "ownerId" | "bucket" | "objectKey" | "mimeType" | "durationMs" | "thumbnailObjectKey" | "metadata" | "startTime" | "endTime" | "createdAt" | "updatedAt", ExtArgs["result"]["video"]>
 export type VideoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   frames?: boolean | Prisma.Video$framesArgs<ExtArgs>
+  referenceComparisons?: boolean | Prisma.Video$referenceComparisonsArgs<ExtArgs>
+  attemptComparisons?: boolean | Prisma.Video$attemptComparisonsArgs<ExtArgs>
   _count?: boolean | Prisma.VideoCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type VideoIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -408,11 +1052,24 @@ export type $VideoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   name: "Video"
   objects: {
     frames: Prisma.$FramePayload<ExtArgs>[]
+    referenceComparisons: Prisma.$ComparisonResultPayload<ExtArgs>[]
+    attemptComparisons: Prisma.$ComparisonResultPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    role: $Enums.VideoRole
+    storageKind: $Enums.VideoStorageKind
+    ownerId: string | null
+    bucket: string | null
+    objectKey: string | null
+    mimeType: string | null
+    durationMs: number | null
+    thumbnailObjectKey: string | null
+    metadata: runtime.JsonValue | null
     startTime: Date
     endTime: Date | null
+    createdAt: Date
+    updatedAt: Date
   }, ExtArgs["result"]["video"]>
   composites: {}
 }
@@ -808,6 +1465,8 @@ readonly fields: VideoFieldRefs;
 export interface Prisma__VideoClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   frames<T extends Prisma.Video$framesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Video$framesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FramePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  referenceComparisons<T extends Prisma.Video$referenceComparisonsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Video$referenceComparisonsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ComparisonResultPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  attemptComparisons<T extends Prisma.Video$attemptComparisonsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Video$attemptComparisonsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ComparisonResultPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -838,8 +1497,19 @@ export interface Prisma__VideoClient<T, Null = never, ExtArgs extends runtime.Ty
  */
 export interface VideoFieldRefs {
   readonly id: Prisma.FieldRef<"Video", 'String'>
+  readonly role: Prisma.FieldRef<"Video", 'VideoRole'>
+  readonly storageKind: Prisma.FieldRef<"Video", 'VideoStorageKind'>
+  readonly ownerId: Prisma.FieldRef<"Video", 'String'>
+  readonly bucket: Prisma.FieldRef<"Video", 'String'>
+  readonly objectKey: Prisma.FieldRef<"Video", 'String'>
+  readonly mimeType: Prisma.FieldRef<"Video", 'String'>
+  readonly durationMs: Prisma.FieldRef<"Video", 'Int'>
+  readonly thumbnailObjectKey: Prisma.FieldRef<"Video", 'String'>
+  readonly metadata: Prisma.FieldRef<"Video", 'Json'>
   readonly startTime: Prisma.FieldRef<"Video", 'DateTime'>
   readonly endTime: Prisma.FieldRef<"Video", 'DateTime'>
+  readonly createdAt: Prisma.FieldRef<"Video", 'DateTime'>
+  readonly updatedAt: Prisma.FieldRef<"Video", 'DateTime'>
 }
     
 
@@ -1058,7 +1728,7 @@ export type VideoCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   /**
    * The data needed to create a Video.
    */
-  data?: Prisma.XOR<Prisma.VideoCreateInput, Prisma.VideoUncheckedCreateInput>
+  data: Prisma.XOR<Prisma.VideoCreateInput, Prisma.VideoUncheckedCreateInput>
 }
 
 /**
@@ -1247,6 +1917,54 @@ export type Video$framesArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   distinct?: Prisma.FrameScalarFieldEnum | Prisma.FrameScalarFieldEnum[]
+}
+
+/**
+ * Video.referenceComparisons
+ */
+export type Video$referenceComparisonsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ComparisonResult
+   */
+  select?: Prisma.ComparisonResultSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ComparisonResult
+   */
+  omit?: Prisma.ComparisonResultOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ComparisonResultInclude<ExtArgs> | null
+  where?: Prisma.ComparisonResultWhereInput
+  orderBy?: Prisma.ComparisonResultOrderByWithRelationInput | Prisma.ComparisonResultOrderByWithRelationInput[]
+  cursor?: Prisma.ComparisonResultWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ComparisonResultScalarFieldEnum | Prisma.ComparisonResultScalarFieldEnum[]
+}
+
+/**
+ * Video.attemptComparisons
+ */
+export type Video$attemptComparisonsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ComparisonResult
+   */
+  select?: Prisma.ComparisonResultSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ComparisonResult
+   */
+  omit?: Prisma.ComparisonResultOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ComparisonResultInclude<ExtArgs> | null
+  where?: Prisma.ComparisonResultWhereInput
+  orderBy?: Prisma.ComparisonResultOrderByWithRelationInput | Prisma.ComparisonResultOrderByWithRelationInput[]
+  cursor?: Prisma.ComparisonResultWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ComparisonResultScalarFieldEnum | Prisma.ComparisonResultScalarFieldEnum[]
 }
 
 /**

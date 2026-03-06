@@ -40,6 +40,7 @@ export function isCompareVideosSuccess(
 export class PoseService {
   private readonly logger = new Logger(PoseService.name);
   private readonly comparator = new PoseComparator();
+  private readonly comparisonAlgorithmVersion = 'pose-comparator:v1';
 
   constructor(
     private readonly sessionService: PoseRecordingSessionService,
@@ -133,6 +134,11 @@ export class PoseService {
         ? new PoseComparator(comparatorConfig)
         : this.comparator;
       const result = comparator.compareVideos(referenceVideo, comparisonVideo);
+      await this.persistComparisonResult(
+        referenceVideoId,
+        comparisonVideoId,
+        result,
+      );
 
       this.logger.log(
         `Compared videos: ref=${referenceVideoId}, comp=${comparisonVideoId}, score=${result.overallScore.toFixed(2)}`,
@@ -167,6 +173,25 @@ export class PoseService {
     }
 
     return adaptComparatorConfig(config) === undefined;
+  }
+
+  private async persistComparisonResult(
+    referenceVideoId: string,
+    comparisonVideoId: string,
+    result: ScoringResult,
+  ): Promise<void> {
+    try {
+      await this.videoRepository.createComparisonResult({
+        referenceVideoId,
+        comparisonVideoId,
+        result,
+        algorithmVersion: this.comparisonAlgorithmVersion,
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Comparison succeeded but result persistence failed for ref=${referenceVideoId} comp=${comparisonVideoId}: ${this.stringifyError(error)}`,
+      );
+    }
   }
 
   private mapStoredVideoToVideo(storedVideo: StoredPoseVideoRecord): Video {
@@ -261,5 +286,13 @@ export class PoseService {
           ? landmark.visibility
           : undefined,
     };
+  }
+
+  private stringifyError(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    return String(error);
   }
 }
