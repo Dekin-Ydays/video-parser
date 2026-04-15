@@ -1,7 +1,5 @@
--- RedefineTables
-PRAGMA defer_foreign_keys=ON;
-PRAGMA foreign_keys=OFF;
-CREATE TABLE "new_Video" (
+-- CreateTable
+CREATE TABLE "Video" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "role" TEXT NOT NULL DEFAULT 'SESSION',
     "storageKind" TEXT NOT NULL DEFAULT 'POSE_ONLY',
@@ -15,25 +13,20 @@ CREATE TABLE "new_Video" (
     "startTime" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "endTime" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "updatedAt" DATETIME NOT NULL,
+    "frameCount" INTEGER NOT NULL DEFAULT 0
 );
-INSERT INTO "new_Video" (
-    "id",
-    "startTime",
-    "endTime",
-    "createdAt",
-    "updatedAt"
-)
-SELECT
-    "id",
-    "startTime",
-    "endTime",
-    "startTime",
-    CURRENT_TIMESTAMP
-FROM "Video";
-DROP TABLE "Video";
-ALTER TABLE "new_Video" RENAME TO "Video";
-CREATE UNIQUE INDEX "Video_objectKey_key" ON "Video"("objectKey");
+
+-- CreateTable
+CREATE TABLE "Frame" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "videoId" TEXT NOT NULL,
+    "data" JSONB NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Frame_videoId_fkey" FOREIGN KEY ("videoId") REFERENCES "Video" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- CreateTable
 CREATE TABLE "ComparisonResult" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "referenceVideoId" TEXT NOT NULL,
@@ -49,8 +42,15 @@ CREATE TABLE "ComparisonResult" (
     CONSTRAINT "ComparisonResult_referenceVideoId_fkey" FOREIGN KEY ("referenceVideoId") REFERENCES "Video" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "ComparisonResult_comparisonVideoId_fkey" FOREIGN KEY ("comparisonVideoId") REFERENCES "Video" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Video_objectKey_key" ON "Video"("objectKey");
+
+-- CreateIndex
 CREATE INDEX "ComparisonResult_referenceVideoId_idx" ON "ComparisonResult"("referenceVideoId");
+
+-- CreateIndex
 CREATE INDEX "ComparisonResult_comparisonVideoId_idx" ON "ComparisonResult"("comparisonVideoId");
+
+-- CreateIndex
 CREATE INDEX "ComparisonResult_referenceVideoId_comparisonVideoId_createdAt_idx" ON "ComparisonResult"("referenceVideoId", "comparisonVideoId", "createdAt");
-PRAGMA foreign_keys=ON;
-PRAGMA defer_foreign_keys=OFF;

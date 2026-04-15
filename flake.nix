@@ -2,7 +2,7 @@
   description = "Dekin Video Parser Development Shell";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -58,34 +58,18 @@
         export MEDIAPIPE_POSE_MODEL="$MODEL"
       '';
 
-      prismaEnv = ''
-        export PRISMA_SCHEMA_ENGINE_BINARY="${pkgs.prisma-engines}/bin/schema-engine"
-        export PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
-
-        # nixpkgs variants differ: some expose only schema-engine.
-        if [ -x "${pkgs.prisma-engines}/bin/query-engine" ]; then
-          export PRISMA_QUERY_ENGINE_BINARY="${pkgs.prisma-engines}/bin/query-engine"
-        fi
-        if [ -x "${pkgs.prisma-engines}/bin/prisma-fmt" ]; then
-          export PRISMA_FMT_BINARY="${pkgs.prisma-engines}/bin/prisma-fmt"
-        fi
-      '';
     in {
       devShells.default = pkgs.mkShell {
         packages = with pkgs; [
           nodejs_22
           pnpm
           ffmpeg
-          prisma-engines
           pkg-config
           openssl
           pythonWithBase
         ];
 
-        shellHook = ''
-          ${prismaEnv}
-          ${bootstrapVenv}
-        '';
+        shellHook = bootstrapVenv;
       };
     });
 }
