@@ -3,4 +3,7 @@ dist
 *.log
 *.md
 .git
-
+.direnv
+dev.db
+python/.venv
+python/models

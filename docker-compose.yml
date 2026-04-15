@@ -12,7 +12,9 @@ services:
       - minio_data:/data
 
   parser:
-    build: .
+    build:
+      context: .
+      target: dev
     ports:
       - '3000:3000'
     environment:
@@ -24,11 +26,20 @@ services:
       MINIO_BUCKET: videos
       MINIO_REGION: us-east-1
       CORS_ORIGINS: 'http://localhost:8081,http://localhost:19006'
+      CHOKIDAR_USEPOLLING: 'true'
+      WATCHPACK_POLLING: 'true'
     depends_on:
       - minio
+    command:
+      - sh
+      - -c
+      - pnpm exec prisma generate && pnpm exec prisma migrate deploy && pnpm run start:dev
     volumes:
+      - .:/app
+      - parser_node_modules:/app/node_modules
       - parser_data:/app/data
 
 volumes:
   minio_data:
+  parser_node_modules:
   parser_data:

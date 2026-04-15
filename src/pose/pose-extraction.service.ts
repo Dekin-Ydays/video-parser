@@ -22,6 +22,14 @@ interface PythonOutput {
   frames: PythonFrame[];
 }
 
+const SUPPRESSED_PYTHON_STDERR_PATTERNS = [
+  /^Error in cpuinfo: prctl\(PR_SVE_GET_VL\) failed$/,
+  /^INFO: Created TensorFlow Lite XNNPACK delegate for CPU\.$/,
+  /^WARNING: All log messages before absl::InitializeLog\(\) is called are written to STDERR$/,
+  /^W\d{4} .* inference_feedback_manager\.cc:114] Feedback manager requires a model with a single signature inference\. Disabling support for feedback tensors\.$/,
+  /^W\d{4} .* landmark_projection_calculator\.cc:186] Using NORM_RECT without IMAGE_DIMENSIONS is only supported for the square ROI\. Provide IMAGE_DIMENSIONS or use PROJECTION_MATRIX\.$/,
+];
+
 export interface ExtractedVideo {
   fps: number;
   width: number;
@@ -76,14 +84,32 @@ export class PoseExtractionService {
 
   private runPython(inputPath: string, outputPath: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const args = [this.workerPath, inputPath, outputPath, '--model', this.modelPath];
+      const args = [
+        '-u',
+        this.workerPath,
+        inputPath,
+        outputPath,
+        '--model',
+        this.modelPath,
+      ];
       const child = spawn(this.pythonBin, args, {
         stdio: ['ignore', 'pipe', 'pipe'],
+        env: {
+          ...process.env,
+          PYTHONUNBUFFERED: '1',
+        },
       });
 
+      this.logger.log(
+        `Starting Python worker bin=${this.pythonBin} script=${this.workerPath}`,
+      );
+
       let stderr = '';
-      child.stderr.on('data', (chunk: Buffer) => {
-        stderr += chunk.toString();
+      this.pipeWorkerStream(child.stdout, 'stdout');
+      this.pipeWorkerStream(child.stderr, 'stderr', (line) => {
+        if (!this.shouldSuppressPythonStderr(line)) {
+          stderr += `${line}\n`;
+        }
       });
 
       child.on('error', (err) => {
@@ -92,12 +118,71 @@ export class PoseExtractionService {
 
       child.on('close', (code) => {
         if (code === 0) {
+          this.logger.log('Python worker completed successfully');
           resolve();
         } else {
-          this.logger.error(`Python worker exited with code ${code}: ${stderr}`);
+          const trimmedStderr = stderr.trim();
+          this.logger.error(
+            `Python worker exited with code ${code}${trimmedStderr ? `: ${trimmedStderr}` : ''}`,
+          );
           reject(new Error(`Pose extraction failed (exit ${code}): ${stderr}`));
         }
       });
     });
+  }
+
+  private pipeWorkerStream(
+    stream: NodeJS.ReadableStream | null,
+    streamName: 'stdout' | 'stderr',
+    onLine?: (line: string) => void,
+  ): void {
+    if (!stream) {
+      return;
+    }
+
+    let pending = '';
+    stream.on('data', (chunk: Buffer | string) => {
+      pending += chunk.toString();
+      const lines = pending.split(/\r?\n/);
+      pending = lines.pop() ?? '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          continue;
+        }
+
+        onLine?.(trimmed);
+        if (streamName === 'stdout') {
+          this.logger.log(`[python] ${trimmed}`);
+        } else if (!this.shouldSuppressPythonStderr(trimmed)) {
+          this.logger.warn(`[python] ${trimmed}`);
+        } else {
+          this.logger.debug(`[python] suppressed noisy stderr: ${trimmed}`);
+        }
+      }
+    });
+
+    stream.on('end', () => {
+      const trimmed = pending.trim();
+      if (!trimmed) {
+        return;
+      }
+
+      onLine?.(trimmed);
+      if (streamName === 'stdout') {
+        this.logger.log(`[python] ${trimmed}`);
+      } else if (!this.shouldSuppressPythonStderr(trimmed)) {
+        this.logger.warn(`[python] ${trimmed}`);
+      } else {
+        this.logger.debug(`[python] suppressed noisy stderr: ${trimmed}`);
+      }
+    });
+  }
+
+  private shouldSuppressPythonStderr(line: string): boolean {
+    return SUPPRESSED_PYTHON_STDERR_PATTERNS.some((pattern) =>
+      pattern.test(line),
+    );
   }
 }

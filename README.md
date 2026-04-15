@@ -107,6 +107,22 @@ $ pnpm exec prisma migrate deploy
 $ pnpm run start:dev
 ```
 
+## Docker development
+
+To run the API in Docker with the same watch-mode loop as `pnpm run start:dev`:
+
+```bash
+docker compose up --build
+```
+
+The `parser` service now:
+
+- runs `pnpm run start:dev`
+- bind-mounts the repo so TS and Python edits are picked up
+- keeps `node_modules` inside a Docker volume so host/native module mismatches do not leak in
+- runs `prisma generate` and `prisma migrate deploy` on boot
+- uses the Python worker inside the container with the MediaPipe model available at `/opt/pose`
+
 ## Compile and run the project
 
 ```bash

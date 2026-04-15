@@ -39,6 +39,11 @@ DEFAULT_MODEL_PATH = os.environ.get(
     "MEDIAPIPE_POSE_MODEL",
     str(Path(__file__).parent / "models" / "pose_landmarker_heavy.task"),
 )
+PROGRESS_EVERY_N_FRAMES = 100
+
+
+def log(message: str) -> None:
+    print(message, flush=True)
 
 
 def build_landmarker(model_path: str):
@@ -61,6 +66,9 @@ def process(input_path: str, output_path: str, model_path: str) -> None:
     if not os.path.isfile(model_path):
         raise FileNotFoundError(f"MediaPipe model not found: {model_path}")
 
+    log(f"Starting pose extraction input={input_path} output={output_path}")
+    log(f"Using model={model_path}")
+
     cap = cv2.VideoCapture(input_path)
     if not cap.isOpened():
         raise RuntimeError(f"Could not open video: {input_path}")
@@ -69,6 +77,10 @@ def process(input_path: str, output_path: str, model_path: str) -> None:
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    log(
+        f"Video metadata fps={fps:.2f} width={width} height={height} totalFrames={total_frames}"
+    )
 
     frames_out = []
 
@@ -105,6 +117,9 @@ def process(input_path: str, output_path: str, model_path: str) -> None:
             })
             index += 1
 
+            if index % PROGRESS_EVERY_N_FRAMES == 0:
+                log(f"Processed {index} frames")
+
     cap.release()
 
     payload = {
@@ -119,6 +134,11 @@ def process(input_path: str, output_path: str, model_path: str) -> None:
     os.makedirs(os.path.dirname(os.path.abspath(output_path)) or ".", exist_ok=True)
     with open(output_path, "w") as f:
         json.dump(payload, f)
+
+    detected_frames = sum(1 for frame in frames_out if frame["detected"])
+    log(
+        f"Finished pose extraction frames={len(frames_out)} detectedFrames={detected_frames}"
+    )
 
 
 def main() -> int:
