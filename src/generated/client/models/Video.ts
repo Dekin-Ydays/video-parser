@@ -28,10 +28,12 @@ export type AggregateVideo = {
 
 export type VideoAvgAggregateOutputType = {
   durationMs: number | null
+  frameCount: number | null
 }
 
 export type VideoSumAggregateOutputType = {
   durationMs: number | null
+  frameCount: number | null
 }
 
 export type VideoMinAggregateOutputType = {
@@ -48,6 +50,7 @@ export type VideoMinAggregateOutputType = {
   endTime: Date | null
   createdAt: Date | null
   updatedAt: Date | null
+  frameCount: number | null
 }
 
 export type VideoMaxAggregateOutputType = {
@@ -64,6 +67,7 @@ export type VideoMaxAggregateOutputType = {
   endTime: Date | null
   createdAt: Date | null
   updatedAt: Date | null
+  frameCount: number | null
 }
 
 export type VideoCountAggregateOutputType = {
@@ -81,16 +85,19 @@ export type VideoCountAggregateOutputType = {
   endTime: number
   createdAt: number
   updatedAt: number
+  frameCount: number
   _all: number
 }
 
 
 export type VideoAvgAggregateInputType = {
   durationMs?: true
+  frameCount?: true
 }
 
 export type VideoSumAggregateInputType = {
   durationMs?: true
+  frameCount?: true
 }
 
 export type VideoMinAggregateInputType = {
@@ -107,6 +114,7 @@ export type VideoMinAggregateInputType = {
   endTime?: true
   createdAt?: true
   updatedAt?: true
+  frameCount?: true
 }
 
 export type VideoMaxAggregateInputType = {
@@ -123,6 +131,7 @@ export type VideoMaxAggregateInputType = {
   endTime?: true
   createdAt?: true
   updatedAt?: true
+  frameCount?: true
 }
 
 export type VideoCountAggregateInputType = {
@@ -140,6 +149,7 @@ export type VideoCountAggregateInputType = {
   endTime?: true
   createdAt?: true
   updatedAt?: true
+  frameCount?: true
   _all?: true
 }
 
@@ -244,6 +254,7 @@ export type VideoGroupByOutputType = {
   endTime: Date | null
   createdAt: Date
   updatedAt: Date
+  frameCount: number
   _count: VideoCountAggregateOutputType | null
   _avg: VideoAvgAggregateOutputType | null
   _sum: VideoSumAggregateOutputType | null
@@ -284,6 +295,7 @@ export type VideoWhereInput = {
   endTime?: Prisma.DateTimeNullableFilter<"Video"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Video"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Video"> | Date | string
+  frameCount?: Prisma.IntFilter<"Video"> | number
   frames?: Prisma.FrameListRelationFilter
   referenceComparisons?: Prisma.ComparisonResultListRelationFilter
   attemptComparisons?: Prisma.ComparisonResultListRelationFilter
@@ -304,6 +316,7 @@ export type VideoOrderByWithRelationInput = {
   endTime?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  frameCount?: Prisma.SortOrder
   frames?: Prisma.FrameOrderByRelationAggregateInput
   referenceComparisons?: Prisma.ComparisonResultOrderByRelationAggregateInput
   attemptComparisons?: Prisma.ComparisonResultOrderByRelationAggregateInput
@@ -327,6 +340,7 @@ export type VideoWhereUniqueInput = Prisma.AtLeast<{
   endTime?: Prisma.DateTimeNullableFilter<"Video"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Video"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Video"> | Date | string
+  frameCount?: Prisma.IntFilter<"Video"> | number
   frames?: Prisma.FrameListRelationFilter
   referenceComparisons?: Prisma.ComparisonResultListRelationFilter
   attemptComparisons?: Prisma.ComparisonResultListRelationFilter
@@ -347,6 +361,7 @@ export type VideoOrderByWithAggregationInput = {
   endTime?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  frameCount?: Prisma.SortOrder
   _count?: Prisma.VideoCountOrderByAggregateInput
   _avg?: Prisma.VideoAvgOrderByAggregateInput
   _max?: Prisma.VideoMaxOrderByAggregateInput
@@ -372,6 +387,7 @@ export type VideoScalarWhereWithAggregatesInput = {
   endTime?: Prisma.DateTimeNullableWithAggregatesFilter<"Video"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Video"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Video"> | Date | string
+  frameCount?: Prisma.IntWithAggregatesFilter<"Video"> | number
 }
 
 export type VideoCreateInput = {
@@ -389,6 +405,7 @@ export type VideoCreateInput = {
   endTime?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  frameCount?: number
   frames?: Prisma.FrameCreateNestedManyWithoutVideoInput
   referenceComparisons?: Prisma.ComparisonResultCreateNestedManyWithoutReferenceVideoInput
   attemptComparisons?: Prisma.ComparisonResultCreateNestedManyWithoutComparisonVideoInput
@@ -409,6 +426,7 @@ export type VideoUncheckedCreateInput = {
   endTime?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  frameCount?: number
   frames?: Prisma.FrameUncheckedCreateNestedManyWithoutVideoInput
   referenceComparisons?: Prisma.ComparisonResultUncheckedCreateNestedManyWithoutReferenceVideoInput
   attemptComparisons?: Prisma.ComparisonResultUncheckedCreateNestedManyWithoutComparisonVideoInput
@@ -429,6 +447,7 @@ export type VideoUpdateInput = {
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  frameCount?: Prisma.IntFieldUpdateOperationsInput | number
   frames?: Prisma.FrameUpdateManyWithoutVideoNestedInput
   referenceComparisons?: Prisma.ComparisonResultUpdateManyWithoutReferenceVideoNestedInput
   attemptComparisons?: Prisma.ComparisonResultUpdateManyWithoutComparisonVideoNestedInput
@@ -449,6 +468,7 @@ export type VideoUncheckedUpdateInput = {
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  frameCount?: Prisma.IntFieldUpdateOperationsInput | number
   frames?: Prisma.FrameUncheckedUpdateManyWithoutVideoNestedInput
   referenceComparisons?: Prisma.ComparisonResultUncheckedUpdateManyWithoutReferenceVideoNestedInput
   attemptComparisons?: Prisma.ComparisonResultUncheckedUpdateManyWithoutComparisonVideoNestedInput
@@ -469,6 +489,7 @@ export type VideoCreateManyInput = {
   endTime?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  frameCount?: number
 }
 
 export type VideoUpdateManyMutationInput = {
@@ -486,6 +507,7 @@ export type VideoUpdateManyMutationInput = {
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  frameCount?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type VideoUncheckedUpdateManyInput = {
@@ -503,6 +525,7 @@ export type VideoUncheckedUpdateManyInput = {
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  frameCount?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type VideoCountOrderByAggregateInput = {
@@ -520,10 +543,12 @@ export type VideoCountOrderByAggregateInput = {
   endTime?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  frameCount?: Prisma.SortOrder
 }
 
 export type VideoAvgOrderByAggregateInput = {
   durationMs?: Prisma.SortOrder
+  frameCount?: Prisma.SortOrder
 }
 
 export type VideoMaxOrderByAggregateInput = {
@@ -540,6 +565,7 @@ export type VideoMaxOrderByAggregateInput = {
   endTime?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  frameCount?: Prisma.SortOrder
 }
 
 export type VideoMinOrderByAggregateInput = {
@@ -556,10 +582,12 @@ export type VideoMinOrderByAggregateInput = {
   endTime?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  frameCount?: Prisma.SortOrder
 }
 
 export type VideoSumOrderByAggregateInput = {
   durationMs?: Prisma.SortOrder
+  frameCount?: Prisma.SortOrder
 }
 
 export type VideoScalarRelationFilter = {
@@ -597,6 +625,14 @@ export type DateTimeFieldUpdateOperationsInput = {
 
 export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
+}
+
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type VideoCreateNestedOneWithoutFramesInput = {
@@ -656,6 +692,7 @@ export type VideoCreateWithoutFramesInput = {
   endTime?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  frameCount?: number
   referenceComparisons?: Prisma.ComparisonResultCreateNestedManyWithoutReferenceVideoInput
   attemptComparisons?: Prisma.ComparisonResultCreateNestedManyWithoutComparisonVideoInput
 }
@@ -675,6 +712,7 @@ export type VideoUncheckedCreateWithoutFramesInput = {
   endTime?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  frameCount?: number
   referenceComparisons?: Prisma.ComparisonResultUncheckedCreateNestedManyWithoutReferenceVideoInput
   attemptComparisons?: Prisma.ComparisonResultUncheckedCreateNestedManyWithoutComparisonVideoInput
 }
@@ -710,6 +748,7 @@ export type VideoUpdateWithoutFramesInput = {
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  frameCount?: Prisma.IntFieldUpdateOperationsInput | number
   referenceComparisons?: Prisma.ComparisonResultUpdateManyWithoutReferenceVideoNestedInput
   attemptComparisons?: Prisma.ComparisonResultUpdateManyWithoutComparisonVideoNestedInput
 }
@@ -729,6 +768,7 @@ export type VideoUncheckedUpdateWithoutFramesInput = {
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  frameCount?: Prisma.IntFieldUpdateOperationsInput | number
   referenceComparisons?: Prisma.ComparisonResultUncheckedUpdateManyWithoutReferenceVideoNestedInput
   attemptComparisons?: Prisma.ComparisonResultUncheckedUpdateManyWithoutComparisonVideoNestedInput
 }
@@ -748,6 +788,7 @@ export type VideoCreateWithoutReferenceComparisonsInput = {
   endTime?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  frameCount?: number
   frames?: Prisma.FrameCreateNestedManyWithoutVideoInput
   attemptComparisons?: Prisma.ComparisonResultCreateNestedManyWithoutComparisonVideoInput
 }
@@ -767,6 +808,7 @@ export type VideoUncheckedCreateWithoutReferenceComparisonsInput = {
   endTime?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  frameCount?: number
   frames?: Prisma.FrameUncheckedCreateNestedManyWithoutVideoInput
   attemptComparisons?: Prisma.ComparisonResultUncheckedCreateNestedManyWithoutComparisonVideoInput
 }
@@ -791,6 +833,7 @@ export type VideoCreateWithoutAttemptComparisonsInput = {
   endTime?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  frameCount?: number
   frames?: Prisma.FrameCreateNestedManyWithoutVideoInput
   referenceComparisons?: Prisma.ComparisonResultCreateNestedManyWithoutReferenceVideoInput
 }
@@ -810,6 +853,7 @@ export type VideoUncheckedCreateWithoutAttemptComparisonsInput = {
   endTime?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  frameCount?: number
   frames?: Prisma.FrameUncheckedCreateNestedManyWithoutVideoInput
   referenceComparisons?: Prisma.ComparisonResultUncheckedCreateNestedManyWithoutReferenceVideoInput
 }
@@ -845,6 +889,7 @@ export type VideoUpdateWithoutReferenceComparisonsInput = {
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  frameCount?: Prisma.IntFieldUpdateOperationsInput | number
   frames?: Prisma.FrameUpdateManyWithoutVideoNestedInput
   attemptComparisons?: Prisma.ComparisonResultUpdateManyWithoutComparisonVideoNestedInput
 }
@@ -864,6 +909,7 @@ export type VideoUncheckedUpdateWithoutReferenceComparisonsInput = {
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  frameCount?: Prisma.IntFieldUpdateOperationsInput | number
   frames?: Prisma.FrameUncheckedUpdateManyWithoutVideoNestedInput
   attemptComparisons?: Prisma.ComparisonResultUncheckedUpdateManyWithoutComparisonVideoNestedInput
 }
@@ -894,6 +940,7 @@ export type VideoUpdateWithoutAttemptComparisonsInput = {
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  frameCount?: Prisma.IntFieldUpdateOperationsInput | number
   frames?: Prisma.FrameUpdateManyWithoutVideoNestedInput
   referenceComparisons?: Prisma.ComparisonResultUpdateManyWithoutReferenceVideoNestedInput
 }
@@ -913,6 +960,7 @@ export type VideoUncheckedUpdateWithoutAttemptComparisonsInput = {
   endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  frameCount?: Prisma.IntFieldUpdateOperationsInput | number
   frames?: Prisma.FrameUncheckedUpdateManyWithoutVideoNestedInput
   referenceComparisons?: Prisma.ComparisonResultUncheckedUpdateManyWithoutReferenceVideoNestedInput
 }
@@ -981,6 +1029,7 @@ export type VideoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   endTime?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  frameCount?: boolean
   frames?: boolean | Prisma.Video$framesArgs<ExtArgs>
   referenceComparisons?: boolean | Prisma.Video$referenceComparisonsArgs<ExtArgs>
   attemptComparisons?: boolean | Prisma.Video$attemptComparisonsArgs<ExtArgs>
@@ -1002,6 +1051,7 @@ export type VideoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   endTime?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  frameCount?: boolean
 }, ExtArgs["result"]["video"]>
 
 export type VideoSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1019,6 +1069,7 @@ export type VideoSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   endTime?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  frameCount?: boolean
 }, ExtArgs["result"]["video"]>
 
 export type VideoSelectScalar = {
@@ -1036,9 +1087,10 @@ export type VideoSelectScalar = {
   endTime?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  frameCount?: boolean
 }
 
-export type VideoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "role" | "storageKind" | "ownerId" | "bucket" | "objectKey" | "mimeType" | "durationMs" | "thumbnailObjectKey" | "metadata" | "startTime" | "endTime" | "createdAt" | "updatedAt", ExtArgs["result"]["video"]>
+export type VideoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "role" | "storageKind" | "ownerId" | "bucket" | "objectKey" | "mimeType" | "durationMs" | "thumbnailObjectKey" | "metadata" | "startTime" | "endTime" | "createdAt" | "updatedAt" | "frameCount", ExtArgs["result"]["video"]>
 export type VideoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   frames?: boolean | Prisma.Video$framesArgs<ExtArgs>
   referenceComparisons?: boolean | Prisma.Video$referenceComparisonsArgs<ExtArgs>
@@ -1070,6 +1122,7 @@ export type $VideoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     endTime: Date | null
     createdAt: Date
     updatedAt: Date
+    frameCount: number
   }, ExtArgs["result"]["video"]>
   composites: {}
 }
@@ -1510,6 +1563,7 @@ export interface VideoFieldRefs {
   readonly endTime: Prisma.FieldRef<"Video", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"Video", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Video", 'DateTime'>
+  readonly frameCount: Prisma.FieldRef<"Video", 'Int'>
 }
     
 

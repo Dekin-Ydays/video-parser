@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Prisma } from '../generated/client/client';
+import { MinioService } from '../minio/minio.service';
 import { PoseFrame } from './types/pose.types';
 import { ScoringResult } from './comparator';
 
@@ -29,7 +30,10 @@ export interface CreateComparisonResultInput {
 
 @Injectable()
 export class PoseVideoRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly minio: MinioService,
+  ) {}
 
   async createVideo(startTime = new Date()): Promise<string> {
     const video = await this.prisma.video.create({
@@ -69,10 +73,32 @@ export class PoseVideoRepository {
   }
 
   async endVideo(videoId: string, endTime = new Date()): Promise<void> {
-    await this.prisma.video.update({
+    const video = await this.prisma.video.findUniqueOrThrow({
       where: { id: videoId },
-      data: { endTime },
+      include: {
+        frames: {
+          orderBy: { createdAt: 'asc' },
+          select: { data: true },
+        },
+      },
     });
+
+    const frames = video.frames.map((f) => f.data as unknown as PoseFrame);
+
+    await this.minio.uploadVideo({
+      id: videoId,
+      startTime: video.startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      frames,
+    });
+
+    await this.prisma.$transaction([
+      this.prisma.frame.deleteMany({ where: { videoId } }),
+      this.prisma.video.update({
+        where: { id: videoId },
+        data: { endTime, frameCount: frames.length },
+      }),
+    ]);
   }
 
   async listVideos(): Promise<StoredVideoSummaryRecord[]> {
@@ -90,18 +116,37 @@ export class PoseVideoRepository {
         ? video.endTime.getTime() - video.startTime.getTime()
         : null;
 
+      const frameCount = video.endTime
+        ? video.frameCount
+        : video._count.frames;
+
       return {
         id: video.id,
         startTime: video.startTime,
         endTime: video.endTime,
-        frameCount: video._count.frames,
+        frameCount,
         duration,
       };
     });
   }
 
   async getVideoById(videoId: string): Promise<StoredPoseVideoRecord | null> {
-    const video = await this.prisma.video.findUnique({
+    const meta = await this.prisma.video.findUnique({
+      where: { id: videoId },
+      select: { endTime: true },
+    });
+
+    if (!meta) return null;
+
+    if (meta.endTime) {
+      // Completed video — fetch the full object from MinIO
+      const stored = await this.minio.downloadVideo(videoId);
+      if (!stored) return null;
+      return { frames: stored.frames.map((f) => ({ data: f })) };
+    }
+
+    // In-progress recording — frames still buffered in SQLite
+    const inProgress = await this.prisma.video.findUnique({
       where: { id: videoId },
       include: {
         frames: {
@@ -111,12 +156,9 @@ export class PoseVideoRepository {
       },
     });
 
-    if (!video) {
-      return null;
-    }
-
+    if (!inProgress) return null;
     return {
-      frames: video.frames.map((frame) => ({ data: frame.data })),
+      frames: inProgress.frames.map((frame) => ({ data: frame.data })),
     };
   }
 

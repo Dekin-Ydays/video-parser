@@ -372,14 +372,6 @@ export type FrameUncheckedUpdateManyWithoutVideoNestedInput = {
   deleteMany?: Prisma.FrameScalarWhereInput | Prisma.FrameScalarWhereInput[]
 }
 
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type FrameCreateWithoutVideoInput = {
   data: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string

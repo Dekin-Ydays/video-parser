@@ -15,6 +15,7 @@ describe('PoseController', () => {
     listVideos: jest.fn(),
     getLatest: jest.fn(),
     getVideoById: jest.fn(),
+    uploadVideoFile: jest.fn(),
     compareVideos: jest.fn(),
   };
 
@@ -95,6 +96,39 @@ describe('PoseController', () => {
           comparisonVideoId: 'b',
         }),
       ).rejects.toBeInstanceOf(InternalServerErrorException);
+    });
+  });
+
+  describe('uploadVideo', () => {
+    it('uploads a video file when payload is valid', async () => {
+      const file = {
+        buffer: Buffer.from('video'),
+        originalname: 'demo.mp4',
+        mimetype: 'video/mp4',
+        size: 5,
+      };
+      const uploaded = { id: 'video-1', objectKey: 'uploads/video-1/demo.mp4' };
+      mockPoseService.uploadVideoFile.mockResolvedValue(uploaded);
+
+      await expect(controller.uploadVideo(file)).resolves.toEqual(uploaded);
+      expect(mockPoseService.uploadVideoFile).toHaveBeenCalledWith(file);
+    });
+
+    it('rejects missing files', async () => {
+      await expect(controller.uploadVideo()).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('rejects non-video mime types', async () => {
+      await expect(
+        controller.uploadVideo({
+          buffer: Buffer.from('text'),
+          originalname: 'notes.txt',
+          mimetype: 'text/plain',
+          size: 4,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 });

@@ -9,11 +9,23 @@ import {
   Video,
 } from './comparator';
 import {
+  MinioService,
+  UploadedSourceVideo,
+} from '../minio/minio.service';
+import {
   PoseVideoRepository,
   StoredPoseVideoRecord,
 } from './pose-video.repository';
 import { PoseRecordingSessionService } from './pose-recording-session.service';
 import { isRecord, stringifyError } from '../utils';
+import { PoseExtractionService } from './pose-extraction.service';
+
+export interface UploadedVideoFileInput {
+  buffer: Buffer;
+  originalname: string;
+  mimetype: string;
+  size: number;
+}
 
 export type CompareVideosErrorCode =
   | 'not_found'
@@ -46,7 +58,55 @@ export class PoseService {
   constructor(
     private readonly sessionService: PoseRecordingSessionService,
     private readonly videoRepository: PoseVideoRepository,
+    private readonly minioService: MinioService,
+    private readonly extractionService: PoseExtractionService,
   ) {}
+
+  async extractAndStoreVideo(
+    file: UploadedVideoFileInput,
+  ): Promise<{
+    videoId: string;
+    frameCount: number;
+    fps: number;
+    width: number;
+    height: number;
+    sourceVideo: UploadedSourceVideo;
+  }> {
+    this.logger.log(
+      `Processing uploaded video: name=${file.originalname} size=${file.size}`,
+    );
+
+    const sourceVideo = await this.minioService.uploadSourceVideo({
+      body: file.buffer,
+      fileName: file.originalname,
+      mimeType: file.mimetype,
+      size: file.size,
+    });
+
+    const extracted = await this.extractionService.extract(
+      file.buffer,
+      file.originalname,
+    );
+
+    const videoId = await this.videoRepository.createVideo();
+    for (const frame of extracted.frames) {
+      await this.videoRepository.createFrame(videoId, frame);
+    }
+    await this.videoRepository.endVideo(videoId);
+
+    this.logger.log(
+      `Video extracted: id=${videoId} frames=${extracted.frames.length} fps=${extracted.fps}`,
+    );
+
+    return {
+      videoId,
+      frameCount: extracted.frames.length,
+      fps: extracted.fps,
+      width: extracted.width,
+      height: extracted.height,
+      sourceVideo,
+    };
+  }
 
   async startVideo(clientId: string): Promise<void> {
     await this.sessionService.startVideo(clientId);
@@ -70,6 +130,25 @@ export class PoseService {
 
   getLatest(clientId: string): PoseFrame | null {
     return this.sessionService.getLatest(clientId);
+  }
+
+  async uploadVideoFile(
+    file: UploadedVideoFileInput,
+  ): Promise<UploadedSourceVideo> {
+    try {
+      return await this.minioService.uploadSourceVideo({
+        body: file.buffer,
+        fileName: file.originalname,
+        mimeType: file.mimetype,
+        size: file.size,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to upload source video file=${file.originalname}`,
+        error,
+      );
+      throw error;
+    }
   }
 
   async listVideos(): Promise<

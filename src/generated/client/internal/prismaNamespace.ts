@@ -678,7 +678,8 @@ export const VideoScalarFieldEnum = {
   startTime: 'startTime',
   endTime: 'endTime',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  frameCount: 'frameCount'
 } as const
 
 export type VideoScalarFieldEnum = (typeof VideoScalarFieldEnum)[keyof typeof VideoScalarFieldEnum]

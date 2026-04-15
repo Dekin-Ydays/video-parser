@@ -36,6 +36,7 @@ model Video {
   frames                Frame[]
   referenceComparisons  ComparisonResult[]   @relation("ReferenceVideoComparisons")
   attemptComparisons    ComparisonResult[]   @relation("AttemptVideoComparisons")
+  frameCount            Int                  @default(0)
 }
 
 model Frame {

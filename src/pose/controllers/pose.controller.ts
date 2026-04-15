@@ -1,17 +1,21 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   InternalServerErrorException,
   NotFoundException,
   Param,
   Post,
-  Body,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   CompareVideosFailureOutcome,
   isCompareVideosSuccess,
   PoseService,
+  UploadedVideoFileInput,
 } from '../pose.service';
 import { CompareVideosDto } from '../dto/compare-videos.dto';
 
@@ -41,6 +45,48 @@ export class PoseController {
     const video = await this.poseService.getVideoById(videoId);
     if (!video) throw new NotFoundException('Video not found');
     return video;
+  }
+
+  @Post('video')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadVideo(@UploadedFile() file?: UploadedVideoFileInput) {
+    if (!file) {
+      throw new BadRequestException('Video file is required');
+    }
+
+    if (!file.mimetype?.startsWith('video/')) {
+      throw new BadRequestException('Only video files are supported');
+    }
+
+    if (!file.buffer || file.size <= 0) {
+      throw new BadRequestException('Uploaded video file is empty');
+    }
+
+    return this.poseService.uploadVideoFile(file);
+  }
+
+  @Post('video/process')
+  @UseInterceptors(FileInterceptor('file'))
+  async processVideo(@UploadedFile() file?: UploadedVideoFileInput) {
+    if (!file) {
+      throw new BadRequestException('Video file is required');
+    }
+    if (!file.mimetype?.startsWith('video/')) {
+      throw new BadRequestException('Only video files are supported');
+    }
+    if (!file.buffer || file.size <= 0) {
+      throw new BadRequestException('Uploaded video file is empty');
+    }
+
+    try {
+      return await this.poseService.extractAndStoreVideo(file);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Pose extraction failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   @Post('compare')
