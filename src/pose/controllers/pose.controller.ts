@@ -3,14 +3,24 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   InternalServerErrorException,
+  MessageEvent,
   NotFoundException,
   Param,
   Post,
+  Query,
+  Res,
+  Sse,
+  StreamableFile,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import type { Response } from 'express';
+import type { Readable } from 'node:stream';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import {
   CompareVideosFailureOutcome,
   isCompareVideosSuccess,
@@ -18,10 +28,40 @@ import {
   UploadedVideoFileInput,
 } from '../pose.service';
 import { CompareVideosDto } from '../dto/compare-videos.dto';
+import {
+  PoseExtractionService,
+  ExtractionProgressEvent,
+} from '../pose-extraction.service';
+import { MinioService } from '../../minio/minio.service';
 
 @Controller('pose')
 export class PoseController {
-  constructor(private readonly poseService: PoseService) {}
+  constructor(
+    private readonly poseService: PoseService,
+    private readonly poseExtractionService: PoseExtractionService,
+    private readonly minioService: MinioService,
+  ) {}
+
+  @Get('health')
+  health() {
+    const extraction = this.poseExtractionService.getHealth();
+    const storage = this.minioService.getStatus();
+    return {
+      ...extraction,
+      ready: extraction.ready && storage.ready,
+      storage,
+    };
+  }
+
+  @Sse('extraction/events')
+  extractionEvents(): Observable<MessageEvent> {
+    return this.poseExtractionService.progress$.pipe(
+      map((event: ExtractionProgressEvent) => ({
+        data: event,
+        type: 'extraction-progress',
+      })),
+    );
+  }
 
   @Get('clients')
   listClients() {
@@ -47,6 +87,23 @@ export class PoseController {
     return video;
   }
 
+  @Get('video/:videoId/source')
+  @Header('Accept-Ranges', 'none')
+  async getSourceVideo(
+    @Param('videoId') videoId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const stream = await this.poseService.streamSourceVideo(videoId);
+    if (!stream) {
+      throw new NotFoundException('Source video not found');
+    }
+    res.setHeader('Content-Type', stream.contentType);
+    if (stream.contentLength !== undefined) {
+      res.setHeader('Content-Length', String(stream.contentLength));
+    }
+    return new StreamableFile(stream.body as Readable);
+  }
+
   @Post('video')
   @UseInterceptors(FileInterceptor('file'))
   async uploadVideo(@UploadedFile() file?: UploadedVideoFileInput) {
@@ -67,7 +124,10 @@ export class PoseController {
 
   @Post('video/process')
   @UseInterceptors(FileInterceptor('file'))
-  async processVideo(@UploadedFile() file?: UploadedVideoFileInput) {
+  async processVideo(
+    @UploadedFile() file?: UploadedVideoFileInput,
+    @Query('jobId') jobId?: string,
+  ) {
     if (!file) {
       throw new BadRequestException('Video file is required');
     }
@@ -79,7 +139,7 @@ export class PoseController {
     }
 
     try {
-      return await this.poseService.extractAndStoreVideo(file);
+      return await this.poseService.extractAndStoreVideo(file, jobId);
     } catch (error) {
       throw new InternalServerErrorException(
         `Pose extraction failed: ${

@@ -43,6 +43,36 @@ export class PoseVideoRepository {
     return video.id;
   }
 
+  async setSourceObject(
+    videoId: string,
+    source: { bucket: string; objectKey: string; mimeType: string },
+  ): Promise<void> {
+    await this.prisma.video.update({
+      where: { id: videoId },
+      data: {
+        bucket: source.bucket,
+        objectKey: source.objectKey,
+        mimeType: source.mimeType,
+        storageKind: 'MINIO_OBJECT',
+      },
+    });
+  }
+
+  async getSourceObject(
+    videoId: string,
+  ): Promise<{ bucket: string; objectKey: string; mimeType: string } | null> {
+    const row = await this.prisma.video.findUnique({
+      where: { id: videoId },
+      select: { bucket: true, objectKey: true, mimeType: true },
+    });
+    if (!row || !row.bucket || !row.objectKey) return null;
+    return {
+      bucket: row.bucket,
+      objectKey: row.objectKey,
+      mimeType: row.mimeType ?? 'application/octet-stream',
+    };
+  }
+
   async createFrame(videoId: string, frame: PoseFrame): Promise<void> {
     await this.createFrames(videoId, [frame]);
   }

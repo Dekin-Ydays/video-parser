@@ -64,6 +64,7 @@ export class PoseService {
 
   async extractAndStoreVideo(
     file: UploadedVideoFileInput,
+    jobId?: string,
   ): Promise<{
     videoId: string;
     frameCount: number;
@@ -86,6 +87,7 @@ export class PoseService {
     const extracted = await this.extractionService.extract(
       file.buffer,
       file.originalname,
+      jobId,
     );
 
     const videoId = await this.videoRepository.createVideo();
@@ -93,6 +95,11 @@ export class PoseService {
       await this.videoRepository.createFrame(videoId, frame);
     }
     await this.videoRepository.endVideo(videoId);
+    await this.videoRepository.setSourceObject(videoId, {
+      bucket: this.minioService.getStatus().bucket,
+      objectKey: sourceVideo.objectKey,
+      mimeType: file.mimetype,
+    });
 
     this.logger.log(
       `Video extracted: id=${videoId} frames=${extracted.frames.length} fps=${extracted.fps}`,
@@ -106,6 +113,16 @@ export class PoseService {
       height: extracted.height,
       sourceVideo,
     };
+  }
+
+  async streamSourceVideo(videoId: string): Promise<{
+    body: NodeJS.ReadableStream;
+    contentType: string;
+    contentLength?: number;
+  } | null> {
+    const source = await this.videoRepository.getSourceObject(videoId);
+    if (!source) return null;
+    return this.minioService.streamSourceVideo(source.objectKey);
   }
 
   async startVideo(clientId: string): Promise<void> {

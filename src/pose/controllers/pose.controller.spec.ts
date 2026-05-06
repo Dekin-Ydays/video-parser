@@ -4,8 +4,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Subject, firstValueFrom } from 'rxjs';
+import { take, toArray } from 'rxjs/operators';
 import { PoseController } from './pose.controller';
 import { PoseService } from '../pose.service';
+import {
+  ExtractionProgressEvent,
+  PoseExtractionService,
+} from '../pose-extraction.service';
+import { MinioService } from '../../minio/minio.service';
 
 describe('PoseController', () => {
   let controller: PoseController;
@@ -19,6 +26,16 @@ describe('PoseController', () => {
     compareVideos: jest.fn(),
   };
 
+  const progressSubject = new Subject<ExtractionProgressEvent>();
+  const mockExtractionService = {
+    getHealth: jest.fn(),
+    progress$: progressSubject.asObservable(),
+  };
+
+  const mockMinioService = {
+    getStatus: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PoseController],
@@ -26,6 +43,14 @@ describe('PoseController', () => {
         {
           provide: PoseService,
           useValue: mockPoseService,
+        },
+        {
+          provide: PoseExtractionService,
+          useValue: mockExtractionService,
+        },
+        {
+          provide: MinioService,
+          useValue: mockMinioService,
         },
       ],
     }).compile();
@@ -129,6 +154,87 @@ describe('PoseController', () => {
           size: 4,
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
+  describe('health', () => {
+    const extractionPayload = {
+      ready: true,
+      workerScript: { path: '/x/process_video.py', present: true },
+      model: { path: '/x/model.task', present: true },
+      pythonBin: 'python3',
+    };
+
+    it('combines extraction health with storage status when both ready', () => {
+      mockExtractionService.getHealth.mockReturnValue(extractionPayload);
+      mockMinioService.getStatus.mockReturnValue({
+        ready: true,
+        endpoint: 'http://minio:9000',
+        bucket: 'videos',
+      });
+
+      expect(controller.health()).toEqual({
+        ...extractionPayload,
+        ready: true,
+        storage: {
+          ready: true,
+          endpoint: 'http://minio:9000',
+          bucket: 'videos',
+        },
+      });
+    });
+
+    it('reports overall not ready when storage is unreachable', () => {
+      mockExtractionService.getHealth.mockReturnValue(extractionPayload);
+      mockMinioService.getStatus.mockReturnValue({
+        ready: false,
+        endpoint: 'http://localhost:9000',
+        bucket: 'videos',
+        error: 'ECONNREFUSED',
+      });
+
+      const result = controller.health();
+      expect(result.ready).toBe(false);
+      expect(result.storage.ready).toBe(false);
+      expect(result.storage.error).toBe('ECONNREFUSED');
+    });
+  });
+
+  describe('extractionEvents (SSE)', () => {
+    it('wraps each progress event as a typed extraction-progress MessageEvent', async () => {
+      const upcoming = firstValueFrom(
+        controller.extractionEvents().pipe(take(2), toArray()),
+      );
+
+      progressSubject.next({
+        jobId: 'j1',
+        phase: 'started',
+        at: 1,
+      });
+      progressSubject.next({
+        jobId: 'j1',
+        phase: 'frames',
+        framesProcessed: 30,
+        totalFrames: 60,
+        at: 2,
+      });
+
+      const events = await upcoming;
+      expect(events).toHaveLength(2);
+      expect(events[0]).toEqual({
+        type: 'extraction-progress',
+        data: { jobId: 'j1', phase: 'started', at: 1 },
+      });
+      expect(events[1]).toEqual({
+        type: 'extraction-progress',
+        data: {
+          jobId: 'j1',
+          phase: 'frames',
+          framesProcessed: 30,
+          totalFrames: 60,
+          at: 2,
+        },
+      });
     });
   });
 });
