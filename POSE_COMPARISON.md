@@ -20,24 +20,27 @@ The pose comparison system is already integrated into the video-parser project. 
 ### 1. Data Structures
 
 #### Landmark
+
 ```typescript
 interface Landmark {
-  x: number;        // Normalized coordinate 0-1
-  y: number;        // Normalized coordinate 0-1
-  z: number;        // Depth coordinate
-  visibility?: number;  // Confidence score 0-1
+  x: number; // Normalized coordinate 0-1
+  y: number; // Normalized coordinate 0-1
+  z: number; // Depth coordinate
+  visibility?: number; // Confidence score 0-1
 }
 ```
 
 #### Frame
+
 ```typescript
 interface Frame {
-  landmarks: Landmark[];  // 33 landmarks from MediaPipe Pose
-  timestamp: number;      // Frame timestamp in ms
+  landmarks: Landmark[]; // 33 landmarks from MediaPipe Pose
+  timestamp: number; // Frame timestamp in ms
 }
 ```
 
 #### Video
+
 ```typescript
 interface Video {
   frames: Frame[];
@@ -45,14 +48,15 @@ interface Video {
 ```
 
 #### ScoringResult
+
 ```typescript
 interface ScoringResult {
-  overallScore: number;       // 0-100 percentage
-  frameScores: number[];      // Score per frame
+  overallScore: number; // 0-100 percentage
+  frameScores: number[]; // Score per frame
   breakdown: {
-    positionScore: number;    // Euclidean distance-based score
-    angularScore: number;     // Joint angle similarity score
-    timingScore: number;      // Video length matching score
+    positionScore: number; // Euclidean distance-based score
+    angularScore: number; // Joint angle similarity score
+    timingScore: number; // Video length matching score
     statistics: {
       mean: number;
       min: number;
@@ -86,11 +90,15 @@ import { Video } from './pose/pose-comparison.types';
 const comparator = new PoseComparator();
 
 const referenceVideo: Video = {
-  frames: [ /* your frames */ ]
+  frames: [
+    /* your frames */
+  ],
 };
 
 const comparisonVideo: Video = {
-  frames: [ /* your frames */ ]
+  frames: [
+    /* your frames */
+  ],
 };
 
 const result = comparator.compareVideos(referenceVideo, comparisonVideo);
@@ -105,16 +113,16 @@ console.log('Angular Score:', result.breakdown.angularScore);
 ```typescript
 const comparator = new PoseComparator({
   normalization: {
-    center: true,      // Center around hip midpoint
-    scale: true,       // Normalize shoulder width to 1.0
-    rotation: true,    // Align shoulder orientation
+    center: true, // Center around hip midpoint
+    scale: true, // Normalize shoulder width to 1.0
+    rotation: true, // Align shoulder orientation
   },
-  positionWeight: 0.7,    // 70% position, 30% angular
+  positionWeight: 0.7, // 70% position, 30% angular
   angularWeight: 0.3,
   visibilityThreshold: 0.6,
   landmarkWeights: new Map([
-    [11, 2.0],  // Left shoulder - higher importance
-    [12, 2.0],  // Right shoulder - higher importance
+    [11, 2.0], // Left shoulder - higher importance
+    [12, 2.0], // Right shoulder - higher importance
     // ... more custom weights
   ]),
 });
@@ -125,6 +133,7 @@ const comparator = new PoseComparator({
 The system is integrated into the NestJS application with these endpoints:
 
 #### Get Video Data
+
 ```bash
 GET /pose/video/:videoId
 ```
@@ -132,6 +141,7 @@ GET /pose/video/:videoId
 Returns the video with all frames and landmarks.
 
 #### Compare Two Videos
+
 ```bash
 POST /pose/compare
 Content-Type: application/json
@@ -152,6 +162,7 @@ Content-Type: application/json
 ```
 
 Response:
+
 ```json
 {
   "overallScore": 87.5,
@@ -172,51 +183,26 @@ Response:
 
 ## Scoring Algorithm
 
-### 1. Normalization
+```mermaid
+flowchart LR
+    A["Pose de référence"] --> C["Normalisation"]
+    B["Pose de l'élève"] --> C
 
-Before comparison, frames are normalized to make the system invariant to position, scale, and optionally rotation.
+    C --> D["Même repère corporel<br/>hanches centrées, taille du corps ajustée"]
 
-**Center Normalization:**
-- Uses hip landmarks (indices 23, 24) as anchor
-- Translates all landmarks so hip center is at (0, 0, 0)
+    D --> E["Score de position<br/>60 %"]
+    D --> F["Score de posture<br/>40 %"]
 
-**Scale Normalization:**
-- Uses shoulder width (distance between landmarks 11 and 12)
-- Normalizes all coordinates so shoulder width = 1.0
+    E --> G["Comparaison des points<br/>les épaules, coudes, hanches et genoux<br/>sont-ils au même endroit ?"]
+    F --> H["Comparaison des angles<br/>les bras, jambes et hanches<br/>sont-ils pliés de la même façon ?"]
 
-**Rotation Normalization:**
-- Uses shoulder line to determine body orientation
-- Rotates all landmarks to align shoulders horizontally
+    G --> I["Score par image<br/>position + posture"]
+    H --> I
 
-### 2. Position Score (Euclidean Distance)
+    I --> J["Score final<br/>moyenne de toutes les images : 0 = différent, 100 = identique"]
 
-Calculates 3D distance between corresponding landmarks with weighted importance:
-
-- Face landmarks (0-10): weight 0.3
-- Upper body (11-16): weight 1.5
-- Hands (17-22): weight 0.8
-- Core/hips (23-24): weight 1.2
-- Lower body (25-32): weight 1.8
-
-Score formula: `100 * e^(-0.5 * avgDistance)` (current implementation constant `k = 0.5`)
-
-### 3. Angular Score
-
-Compares joint angles at key body joints:
-- Left elbow: landmarks [11, 13, 15]
-- Right elbow: landmarks [12, 14, 16]
-- Left knee: landmarks [23, 25, 27]
-- Right knee: landmarks [24, 26, 28]
-- Left hip: landmarks [11, 23, 25]
-- Right hip: landmarks [12, 24, 26]
-
-Score formula: `100 * (1 - avgAngleDifference / 180)`
-
-### 4. Combined Score
-
-Default weights:
-- Position: 60%
-- Angular: 40%
+    C --> K["Score de rythme<br/>vidéo la plus courte / vidéo la plus longue, affiché séparément"]
+```
 
 ## MediaPipe Landmark Indices
 
@@ -229,6 +215,7 @@ The 33 pose landmarks from MediaPipe Pose:
 - **25-32**: Legs (knees, ankles, feet)
 
 Key landmarks for normalization:
+
 - 11: Left shoulder
 - 12: Right shoulder
 - 23: Left hip
@@ -263,6 +250,7 @@ npm test
 ```
 
 Test files:
+
 - `pose-comparison.utils.spec.ts`: Tests for normalization and utility functions
 - `pose-comparator.spec.ts`: Tests for the main comparator class
 
@@ -278,9 +266,9 @@ npx ts-node src/pose/pose-comparison.example.ts
 
 ```typescript
 {
-  center: boolean;    // Translate to common center point (default: true)
-  scale: boolean;     // Normalize body size (default: true)
-  rotation: boolean;  // Align body orientation (default: false)
+  center: boolean; // Translate to common center point (default: true)
+  scale: boolean; // Normalize body size (default: true)
+  rotation: boolean; // Align body orientation (default: false)
 }
 ```
 
@@ -288,9 +276,9 @@ npx ts-node src/pose/pose-comparison.example.ts
 
 ```typescript
 {
-  positionWeight: number;  // Weight for position score (default: 0.6)
-  angularWeight: number;   // Weight for angular score (default: 0.4)
-  visibilityThreshold: number;  // Min visibility to include landmark (default: 0.5)
+  positionWeight: number; // Weight for position score (default: 0.6)
+  angularWeight: number; // Weight for angular score (default: 0.4)
+  visibilityThreshold: number; // Min visibility to include landmark (default: 0.5)
 }
 ```
 
@@ -301,11 +289,11 @@ Customize importance of individual landmarks:
 ```typescript
 {
   landmarkWeights: new Map([
-    [0, 0.3],   // Nose
-    [11, 1.5],  // Left shoulder
-    [12, 1.5],  // Right shoulder
+    [0, 0.3], // Nose
+    [11, 1.5], // Left shoulder
+    [12, 1.5], // Right shoulder
     // ... etc
-  ])
+  ]);
 }
 ```
 
@@ -359,16 +347,19 @@ Potential additions (not yet implemented):
 ## Troubleshooting
 
 **Low scores for identical poses:**
+
 - Check that normalization is enabled
 - Verify landmark visibility values
 - Ensure timestamps are in correct order
 
 **Inconsistent scores:**
+
 - Check for missing z-coordinates
 - Verify all 33 landmarks are present
 - Adjust visibility threshold
 
 **Performance issues:**
+
 - Consider processing frames in batches
 - Cache normalized frames for multiple comparisons
 - Use database indexing for frame queries
