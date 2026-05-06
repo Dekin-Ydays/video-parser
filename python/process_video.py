@@ -46,6 +46,25 @@ def log(message: str) -> None:
     print(message, flush=True)
 
 
+def configure_capture_orientation(cap: cv2.VideoCapture) -> None:
+    """Apply container rotation metadata before MediaPipe sees any frames."""
+    orientation_auto = getattr(cv2, "CAP_PROP_ORIENTATION_AUTO", None)
+    if orientation_auto is not None:
+        cap.set(orientation_auto, 1)
+
+
+def capture_orientation_meta(cap: cv2.VideoCapture) -> tuple[float | None, float | None]:
+    orientation_meta_prop = getattr(cv2, "CAP_PROP_ORIENTATION_META", None)
+    orientation_auto_prop = getattr(cv2, "CAP_PROP_ORIENTATION_AUTO", None)
+    orientation_meta = (
+        cap.get(orientation_meta_prop) if orientation_meta_prop is not None else None
+    )
+    orientation_auto = (
+        cap.get(orientation_auto_prop) if orientation_auto_prop is not None else None
+    )
+    return orientation_meta, orientation_auto
+
+
 def build_landmarker(model_path: str):
     base_options = mp_python.BaseOptions(model_asset_path=model_path)
     options = mp_vision.PoseLandmarkerOptions(
@@ -72,14 +91,18 @@ def process(input_path: str, output_path: str, model_path: str) -> None:
     cap = cv2.VideoCapture(input_path)
     if not cap.isOpened():
         raise RuntimeError(f"Could not open video: {input_path}")
+    configure_capture_orientation(cap)
 
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    orientation_meta, orientation_auto = capture_orientation_meta(cap)
 
     log(
-        f"Video metadata fps={fps:.2f} width={width} height={height} totalFrames={total_frames}"
+        f"Video metadata fps={fps:.2f} width={width} height={height} "
+        f"totalFrames={total_frames} orientationMeta={orientation_meta} "
+        f"orientationAuto={orientation_auto}"
     )
 
     frames_out = []
