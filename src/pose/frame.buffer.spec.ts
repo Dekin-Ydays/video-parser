@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { FrameBufferService } from './frame.buffer';
-import { PoseService } from './pose.service';
+import { PoseRecordingSessionService } from './pose-recording-session.service';
 
 describe('FrameBufferService', () => {
   let moduleRef: TestingModule;
   let service: FrameBufferService;
 
-  const mockPoseService = {
+  const mockSessionService = {
     upsertLatestBatch: jest.fn().mockResolvedValue(undefined),
   };
 
@@ -22,8 +22,8 @@ describe('FrameBufferService', () => {
       providers: [
         FrameBufferService,
         {
-          provide: PoseService,
-          useValue: mockPoseService,
+          provide: PoseRecordingSessionService,
+          useValue: mockSessionService,
         },
       ],
     }).compile();
@@ -41,7 +41,7 @@ describe('FrameBufferService', () => {
 
     expect(accepted).toBe(false);
     await service.disconnectClient('client-a');
-    expect(mockPoseService.upsertLatestBatch).not.toHaveBeenCalled();
+    expect(mockSessionService.upsertLatestBatch).not.toHaveBeenCalled();
   });
 
   it('keeps frames isolated per client', async () => {
@@ -51,12 +51,12 @@ describe('FrameBufferService', () => {
     }
 
     await service.flushClient('client-b');
-    expect(mockPoseService.upsertLatestBatch).toHaveBeenCalledTimes(1);
-    expect(mockPoseService.upsertLatestBatch).not.toHaveBeenCalledWith(
+    expect(mockSessionService.upsertLatestBatch).toHaveBeenCalledTimes(1);
+    expect(mockSessionService.upsertLatestBatch).not.toHaveBeenCalledWith(
       'client-a',
       expect.anything(),
     );
-    expect(mockPoseService.upsertLatestBatch).toHaveBeenCalledWith(
+    expect(mockSessionService.upsertLatestBatch).toHaveBeenCalledWith(
       'client-b',
       expect.arrayContaining([
         expect.objectContaining({ timestamp: 100 }),
@@ -65,8 +65,8 @@ describe('FrameBufferService', () => {
     );
 
     await service.disconnectClient('client-a');
-    expect(mockPoseService.upsertLatestBatch).toHaveBeenCalledTimes(2);
-    expect(mockPoseService.upsertLatestBatch).toHaveBeenCalledWith(
+    expect(mockSessionService.upsertLatestBatch).toHaveBeenCalledTimes(2);
+    expect(mockSessionService.upsertLatestBatch).toHaveBeenCalledWith(
       'client-a',
       [expect.objectContaining({ timestamp: 1 })],
     );
@@ -78,8 +78,8 @@ describe('FrameBufferService', () => {
 
     await service.disconnectClient('client-a');
 
-    expect(mockPoseService.upsertLatestBatch).toHaveBeenCalledTimes(1);
-    expect(mockPoseService.upsertLatestBatch).toHaveBeenNthCalledWith(
+    expect(mockSessionService.upsertLatestBatch).toHaveBeenCalledTimes(1);
+    expect(mockSessionService.upsertLatestBatch).toHaveBeenNthCalledWith(
       1,
       'client-a',
       [
@@ -96,8 +96,8 @@ describe('FrameBufferService', () => {
     service.appendPayload('client-a', payload(2));
     await disconnectPromise;
 
-    expect(mockPoseService.upsertLatestBatch).toHaveBeenCalledTimes(1);
-    expect(mockPoseService.upsertLatestBatch).toHaveBeenCalledWith(
+    expect(mockSessionService.upsertLatestBatch).toHaveBeenCalledTimes(1);
+    expect(mockSessionService.upsertLatestBatch).toHaveBeenCalledWith(
       'client-a',
       [expect.objectContaining({ timestamp: 1 })],
     );

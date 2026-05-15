@@ -1,8 +1,8 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { PoseService } from './pose.service';
 import type { PoseFrame } from './types/pose.types';
 import { ClientStateMap } from './client-state.map';
 import { normalizeFrame } from './utils/pose.normalization';
+import { PoseRecordingSessionService } from './pose-recording-session.service';
 
 type ClientBufferState = {
   frames: PoseFrame[];
@@ -17,7 +17,9 @@ export class FrameBufferService implements OnModuleDestroy {
   private readonly maxFramesPerFlush = 20;
   private readonly flushIntervalMs = 500;
 
-  public constructor(private readonly poseService: PoseService) {}
+  public constructor(
+    private readonly sessionService: PoseRecordingSessionService,
+  ) {}
 
   public appendPayload(clientId: string, payload: unknown): boolean {
     const frame = normalizeFrame(payload);
@@ -63,7 +65,7 @@ export class FrameBufferService implements OnModuleDestroy {
     state.inFlight = state.inFlight
       .catch(() => undefined)
       .then(async () => {
-        await this.poseService.upsertLatestBatch(clientId, framesToFlush);
+        await this.sessionService.upsertLatestBatch(clientId, framesToFlush);
       })
       .catch((error) => {
         this.logger.error(

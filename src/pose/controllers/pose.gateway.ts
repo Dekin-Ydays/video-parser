@@ -6,8 +6,7 @@ import type { IncomingMessage } from 'http';
 import type WebSocket from 'ws';
 import type { RawData } from 'ws';
 import { tryParseJson } from '../../utils';
-import { PoseService } from '../pose.service';
-import { FrameBufferService } from '../frame.buffer';
+import { PoseLiveRecordingService } from '../pose-live-recording.service';
 import { decodePoseFrameProtobufBinary } from '../utils/pose.protobuf';
 
 type WelcomeMessage = {
@@ -62,8 +61,7 @@ export class PoseGateway {
   private readonly clientIdBySocket = new WeakMap<WebSocket, string>();
 
   public constructor(
-    private readonly poseService: PoseService,
-    private readonly frameBufferService: FrameBufferService,
+    private readonly liveRecordingService: PoseLiveRecordingService,
   ) {}
 
   public handleConnection(client: WebSocket, request: IncomingMessage) {
@@ -80,7 +78,12 @@ export class PoseGateway {
     };
     client.send(JSON.stringify(welcome));
 
-    this.poseService.startVideo(clientId);
+    void this.liveRecordingService.connectClient(clientId).catch((error) => {
+      this.logger.error(
+        `Failed to start live recording for clientId=${clientId}`,
+        error,
+      );
+    });
 
     client.on('message', (data) => this.onMessage(client, data));
   }
@@ -90,8 +93,7 @@ export class PoseGateway {
     this.clientIdBySocket.delete(client);
 
     if (clientId) {
-      await this.frameBufferService.disconnectClient(clientId);
-      await this.poseService.removeClient(clientId);
+      await this.liveRecordingService.disconnectClient(clientId);
     }
     this.logger.log(`WS disconnected clientId=${clientId ?? 'unknown'}`);
   }
@@ -107,7 +109,7 @@ export class PoseGateway {
       return this.sendError(client, decoded.error);
     }
 
-    const accepted = this.frameBufferService.appendPayload(
+    const accepted = this.liveRecordingService.appendPayload(
       clientId,
       decoded.payload,
     );
