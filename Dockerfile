@@ -38,7 +38,9 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       python3.11 \
       procps \
+      libegl1 \
       libgl1 \
+      libgles2 \
       libglib2.0-0 \
       ca-certificates \
  && ln -sf /usr/bin/python3.11 /usr/local/bin/python \
@@ -70,7 +72,9 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       python3.11 \
       procps \
+      libegl1 \
       libgl1 \
+      libgles2 \
       libglib2.0-0 \
       ca-certificates \
  && ln -sf /usr/bin/python3.11 /usr/local/bin/python \
@@ -95,7 +99,9 @@ COPY --from=python-builder /opt/pose /opt/pose
 ENV PYTHON_BIN=/opt/pose/venv/bin/python \
     PYTHONUNBUFFERED=1 \
     POSE_WORKER_SCRIPT=/opt/pose/process_video.py \
-    MEDIAPIPE_POSE_MODEL=/opt/pose/models/pose_landmarker_heavy.task
+    MEDIAPIPE_POSE_MODEL=/opt/pose/models/pose_landmarker_heavy.task \
+    MPLCONFIGDIR=/tmp/matplotlib \
+    XDG_CACHE_HOME=/tmp/.cache
 
 RUN mkdir -p /app/data && chown -R appuser:appgroup /app /opt/pose
 USER appuser

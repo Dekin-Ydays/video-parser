@@ -32,3 +32,8 @@ export type Frame = Prisma.FrameModel
  * 
  */
 export type ComparisonResult = Prisma.ComparisonResultModel
+/**
+ * Model ExtractionJob
+ * 
+ */
+export type ExtractionJob = Prisma.ExtractionJobModel

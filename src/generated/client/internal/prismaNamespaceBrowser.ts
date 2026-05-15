@@ -53,7 +53,8 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   Video: 'Video',
   Frame: 'Frame',
-  ComparisonResult: 'ComparisonResult'
+  ComparisonResult: 'ComparisonResult',
+  ExtractionJob: 'ExtractionJob'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -115,6 +116,20 @@ export const ComparisonResultScalarFieldEnum = {
 } as const
 
 export type ComparisonResultScalarFieldEnum = (typeof ComparisonResultScalarFieldEnum)[keyof typeof ComparisonResultScalarFieldEnum]
+
+
+export const ExtractionJobScalarFieldEnum = {
+  jobId: 'jobId',
+  phase: 'phase',
+  framesProcessed: 'framesProcessed',
+  totalFrames: 'totalFrames',
+  error: 'error',
+  at: 'at',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ExtractionJobScalarFieldEnum = (typeof ExtractionJobScalarFieldEnum)[keyof typeof ExtractionJobScalarFieldEnum]
 
 
 export const SortOrder = {

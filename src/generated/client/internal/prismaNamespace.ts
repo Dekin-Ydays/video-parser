@@ -386,7 +386,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   Video: 'Video',
   Frame: 'Frame',
-  ComparisonResult: 'ComparisonResult'
+  ComparisonResult: 'ComparisonResult',
+  ExtractionJob: 'ExtractionJob'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -402,7 +403,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "video" | "frame" | "comparisonResult"
+    modelProps: "video" | "frame" | "comparisonResult" | "extractionJob"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -628,6 +629,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ExtractionJob: {
+      payload: Prisma.$ExtractionJobPayload<ExtArgs>
+      fields: Prisma.ExtractionJobFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ExtractionJobFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExtractionJobPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ExtractionJobFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExtractionJobPayload>
+        }
+        findFirst: {
+          args: Prisma.ExtractionJobFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExtractionJobPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ExtractionJobFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExtractionJobPayload>
+        }
+        findMany: {
+          args: Prisma.ExtractionJobFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExtractionJobPayload>[]
+        }
+        create: {
+          args: Prisma.ExtractionJobCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExtractionJobPayload>
+        }
+        createMany: {
+          args: Prisma.ExtractionJobCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ExtractionJobCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExtractionJobPayload>[]
+        }
+        delete: {
+          args: Prisma.ExtractionJobDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExtractionJobPayload>
+        }
+        update: {
+          args: Prisma.ExtractionJobUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExtractionJobPayload>
+        }
+        deleteMany: {
+          args: Prisma.ExtractionJobDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ExtractionJobUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ExtractionJobUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExtractionJobPayload>[]
+        }
+        upsert: {
+          args: Prisma.ExtractionJobUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExtractionJobPayload>
+        }
+        aggregate: {
+          args: Prisma.ExtractionJobAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateExtractionJob>
+        }
+        groupBy: {
+          args: Prisma.ExtractionJobGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ExtractionJobGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ExtractionJobCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ExtractionJobCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -710,6 +785,20 @@ export const ComparisonResultScalarFieldEnum = {
 } as const
 
 export type ComparisonResultScalarFieldEnum = (typeof ComparisonResultScalarFieldEnum)[keyof typeof ComparisonResultScalarFieldEnum]
+
+
+export const ExtractionJobScalarFieldEnum = {
+  jobId: 'jobId',
+  phase: 'phase',
+  framesProcessed: 'framesProcessed',
+  totalFrames: 'totalFrames',
+  error: 'error',
+  at: 'at',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ExtractionJobScalarFieldEnum = (typeof ExtractionJobScalarFieldEnum)[keyof typeof ExtractionJobScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -821,6 +910,13 @@ export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
     
 
+
+/**
+ * Reference to a field of type 'BigInt'
+ */
+export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+    
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -919,6 +1015,7 @@ export type GlobalOmitConfig = {
   video?: Prisma.VideoOmit
   frame?: Prisma.FrameOmit
   comparisonResult?: Prisma.ComparisonResultOmit
+  extractionJob?: Prisma.ExtractionJobOmit
 }
 
 /* Types for Logging */
