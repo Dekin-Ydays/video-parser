@@ -8,6 +8,7 @@ import { Subject } from 'rxjs';
 
 import type { PoseFrame, MediapipeLandmark } from './types/pose.types';
 import { PoseExtractionJobRepository } from './pose-extraction-job.repository';
+import { parsePoseFrame } from './utils/pose-frame.parser';
 
 export interface ExtractionProgressEvent {
   jobId: string;
@@ -136,11 +137,14 @@ export class PoseExtractionService implements OnModuleInit {
 
       const frames: PoseFrame[] = parsed.frames
         .filter((f) => f.detected && f.landmarks.length > 0)
-        .map((f) => ({
-          timestamp: f.timestampMs,
-          landmarks: f.landmarks,
-          rawType: 'video-extracted',
-        }));
+        .map((f) =>
+          parsePoseFrame({
+            timestamp: f.timestampMs,
+            type: 'video-extracted',
+            landmarks: f.landmarks,
+          }),
+        )
+        .filter((frame): frame is PoseFrame => frame !== null);
 
       await this.emitProgressAndWait({
         jobId,

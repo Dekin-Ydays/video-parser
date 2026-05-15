@@ -3,7 +3,6 @@ import type { PoseFrame } from './types/pose.types';
 import {
   adaptComparatorConfig,
   Frame,
-  Landmark,
   PoseComparator,
   ScoringResult,
   Video,
@@ -14,7 +13,8 @@ import {
   StoredPoseVideoRecord,
 } from './pose-video.repository';
 import { PoseRecordingSessionService } from './pose-recording-session.service';
-import { isRecord, stringifyError } from '../utils';
+import { stringifyError } from '../utils';
+import { parseScoringFrame } from './utils/pose-frame.parser';
 
 export interface UploadedVideoFileInput {
   buffer: Buffer;
@@ -238,92 +238,15 @@ export class PoseService {
 
   private mapStoredVideoToVideo(storedVideo: StoredPoseVideoRecord): Video {
     const frames: Frame[] = storedVideo.frames
-      .map((frame, index) => this.mapStoredFrameToFrame(frame.data, index))
+      .map((frame, index) => {
+        const parsed = parseScoringFrame(frame.data);
+        if (!parsed) {
+          this.logger.warn(`Skipping frame ${index}: invalid pose frame`);
+        }
+        return parsed;
+      })
       .filter((frame): frame is Frame => frame !== null);
 
     return { frames };
-  }
-
-  private mapStoredFrameToFrame(
-    rawData: unknown,
-    frameIndex: number,
-  ): Frame | null {
-    const data = isRecord(rawData) ? rawData : null;
-    if (!data) {
-      this.logger.warn(`Skipping frame ${frameIndex}: non-object data payload`);
-      return null;
-    }
-
-    if (
-      typeof data.timestamp !== 'number' ||
-      !Number.isFinite(data.timestamp)
-    ) {
-      this.logger.warn(`Skipping frame ${frameIndex}: invalid timestamp`);
-      return null;
-    }
-
-    if (!Array.isArray(data.landmarks)) {
-      this.logger.warn(
-        `Skipping frame ${frameIndex}: landmarks is not an array`,
-      );
-      return null;
-    }
-
-    let invalidLandmarkCount = 0;
-    const landmarks: Landmark[] = [];
-
-    for (const rawLandmark of data.landmarks) {
-      const landmark = this.mapStoredLandmark(rawLandmark);
-      if (!landmark) {
-        invalidLandmarkCount += 1;
-        continue;
-      }
-      landmarks.push(landmark);
-    }
-
-    if (invalidLandmarkCount > 0) {
-      this.logger.warn(
-        `Frame ${frameIndex}: skipped ${invalidLandmarkCount} invalid landmarks`,
-      );
-    }
-
-    if (landmarks.length === 0) {
-      this.logger.warn(`Skipping frame ${frameIndex}: no valid landmarks`);
-      return null;
-    }
-
-    return {
-      landmarks,
-      timestamp: data.timestamp,
-    };
-  }
-
-  private mapStoredLandmark(rawLandmark: unknown): Landmark | null {
-    if (!isRecord(rawLandmark)) {
-      return null;
-    }
-
-    const landmark = rawLandmark;
-    if (
-      typeof landmark.x !== 'number' ||
-      !Number.isFinite(landmark.x) ||
-      typeof landmark.y !== 'number' ||
-      !Number.isFinite(landmark.y) ||
-      typeof landmark.z !== 'number' ||
-      !Number.isFinite(landmark.z)
-    ) {
-      return null;
-    }
-
-    return {
-      x: landmark.x,
-      y: landmark.y,
-      z: landmark.z,
-      visibility:
-        typeof landmark.visibility === 'number' &&
-        Number.isFinite(landmark.visibility)
-          ? landmark.visibility
-          : undefined,
-    };
   }
 }

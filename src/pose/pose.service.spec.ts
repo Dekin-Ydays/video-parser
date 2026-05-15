@@ -169,7 +169,7 @@ describe('PoseService', () => {
           {
             data: {
               timestamp: 2,
-              landmarks: [{ x: 1, y: 2 }],
+              landmarks: [{ x: 'bad', y: 2 }],
             },
           },
         ],

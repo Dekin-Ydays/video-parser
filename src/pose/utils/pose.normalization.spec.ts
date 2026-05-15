@@ -6,7 +6,7 @@ describe('normalizeFrame', () => {
     try {
       expect(normalizeFrame([{ x: 1, y: 2 }])).toEqual({
         timestamp: 123,
-        landmarks: [{ x: 1, y: 2 }],
+        landmarks: [{ x: 1, y: 2, z: 0 }],
         rawType: undefined,
       });
     } finally {
@@ -19,7 +19,7 @@ describe('normalizeFrame', () => {
       normalizeFrame({ timestamp: 1, landmarks: [{ x: 1, y: 2 }] }),
     ).toEqual({
       timestamp: 1,
-      landmarks: [{ x: 1, y: 2 }],
+      landmarks: [{ x: 1, y: 2, z: 0 }],
       rawType: undefined,
     });
   });
@@ -29,7 +29,7 @@ describe('normalizeFrame', () => {
       normalizeFrame({ timestamp: 1, poseLandmarks: [{ x: 1, y: 2 }] }),
     ).toEqual({
       timestamp: 1,
-      landmarks: [{ x: 1, y: 2 }],
+      landmarks: [{ x: 1, y: 2, z: 0 }],
       rawType: undefined,
     });
   });
@@ -37,7 +37,7 @@ describe('normalizeFrame', () => {
   it('accepts object payload with points', () => {
     expect(normalizeFrame({ timestamp: 1, points: [{ x: 1, y: 2 }] })).toEqual({
       timestamp: 1,
-      landmarks: [{ x: 1, y: 2 }],
+      landmarks: [{ x: 1, y: 2, z: 0 }],
       rawType: undefined,
     });
   });
@@ -51,7 +51,7 @@ describe('normalizeFrame', () => {
       }),
     ).toEqual({
       timestamp: 1,
-      landmarks: [{ x: 1, y: 2 }],
+      landmarks: [{ x: 1, y: 2, z: 0 }],
       rawType: 'pose-landmarks',
     });
   });
@@ -61,7 +61,7 @@ describe('normalizeFrame', () => {
     try {
       expect(normalizeFrame([[{ x: 1, y: 2 }]])).toEqual({
         timestamp: 123,
-        landmarks: [{ x: 1, y: 2 }],
+        landmarks: [{ x: 1, y: 2, z: 0 }],
         rawType: undefined,
       });
     } finally {
