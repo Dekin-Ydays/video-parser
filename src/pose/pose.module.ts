@@ -8,6 +8,7 @@ import { PoseRecordingSessionService } from './pose-recording-session.service';
 import { FrameBufferService } from './frame.buffer';
 import { MinioModule } from '../minio/minio.module';
 import { PoseExtractionService } from './pose-extraction.service';
+import { PoseVideoProcessingService } from './pose-video-processing.service';
 
 @Module({
   imports: [MinioModule],
@@ -20,6 +21,7 @@ import { PoseExtractionService } from './pose-extraction.service';
     PrismaService,
     FrameBufferService,
     PoseExtractionService,
+    PoseVideoProcessingService,
   ],
 })
 export class PoseModule {}

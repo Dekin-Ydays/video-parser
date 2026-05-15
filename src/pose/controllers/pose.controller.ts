@@ -27,6 +27,7 @@ import {
   PoseService,
   UploadedVideoFileInput,
 } from '../pose.service';
+import { PoseVideoProcessingService } from '../pose-video-processing.service';
 import { CompareVideosDto } from '../dto/compare-videos.dto';
 import {
   PoseExtractionService,
@@ -38,6 +39,7 @@ import { MinioService } from '../../minio/minio.service';
 export class PoseController {
   constructor(
     private readonly poseService: PoseService,
+    private readonly poseVideoProcessingService: PoseVideoProcessingService,
     private readonly poseExtractionService: PoseExtractionService,
     private readonly minioService: MinioService,
   ) {}
@@ -139,7 +141,10 @@ export class PoseController {
     }
 
     try {
-      return await this.poseService.extractAndStoreVideo(file, jobId);
+      return await this.poseVideoProcessingService.processUploadedVideo(
+        file,
+        jobId,
+      );
     } catch (error) {
       throw new InternalServerErrorException(
         `Pose extraction failed: ${

@@ -4,7 +4,6 @@ import { PoseRecordingSessionService } from './pose-recording-session.service';
 import { PoseVideoRepository } from './pose-video.repository';
 import { PoseFrame } from './types/pose.types';
 import { MinioService } from '../minio/minio.service';
-import { PoseExtractionService } from './pose-extraction.service';
 
 describe('PoseService', () => {
   let service: PoseService;
@@ -28,10 +27,6 @@ describe('PoseService', () => {
     uploadSourceVideo: jest.fn(),
   };
 
-  const mockExtractionService = {
-    extract: jest.fn(),
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -47,10 +42,6 @@ describe('PoseService', () => {
         {
           provide: MinioService,
           useValue: mockMinioService,
-        },
-        {
-          provide: PoseExtractionService,
-          useValue: mockExtractionService,
         },
       ],
     }).compile();

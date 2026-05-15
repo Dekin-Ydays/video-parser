@@ -8,17 +8,13 @@ import {
   ScoringResult,
   Video,
 } from './comparator';
-import {
-  MinioService,
-  UploadedSourceVideo,
-} from '../minio/minio.service';
+import { MinioService, UploadedSourceVideo } from '../minio/minio.service';
 import {
   PoseVideoRepository,
   StoredPoseVideoRecord,
 } from './pose-video.repository';
 import { PoseRecordingSessionService } from './pose-recording-session.service';
 import { isRecord, stringifyError } from '../utils';
-import { PoseExtractionService } from './pose-extraction.service';
 
 export interface UploadedVideoFileInput {
   buffer: Buffer;
@@ -59,61 +55,7 @@ export class PoseService {
     private readonly sessionService: PoseRecordingSessionService,
     private readonly videoRepository: PoseVideoRepository,
     private readonly minioService: MinioService,
-    private readonly extractionService: PoseExtractionService,
   ) {}
-
-  async extractAndStoreVideo(
-    file: UploadedVideoFileInput,
-    jobId?: string,
-  ): Promise<{
-    videoId: string;
-    frameCount: number;
-    fps: number;
-    width: number;
-    height: number;
-    sourceVideo: UploadedSourceVideo;
-  }> {
-    this.logger.log(
-      `Processing uploaded video: name=${file.originalname} size=${file.size}`,
-    );
-
-    const sourceVideo = await this.minioService.uploadSourceVideo({
-      body: file.buffer,
-      fileName: file.originalname,
-      mimeType: file.mimetype,
-      size: file.size,
-    });
-
-    const extracted = await this.extractionService.extract(
-      file.buffer,
-      file.originalname,
-      jobId,
-    );
-
-    const videoId = await this.videoRepository.createVideo();
-    for (const frame of extracted.frames) {
-      await this.videoRepository.createFrame(videoId, frame);
-    }
-    await this.videoRepository.endVideo(videoId);
-    await this.videoRepository.setSourceObject(videoId, {
-      bucket: this.minioService.getStatus().bucket,
-      objectKey: sourceVideo.objectKey,
-      mimeType: file.mimetype,
-    });
-
-    this.logger.log(
-      `Video extracted: id=${videoId} frames=${extracted.frames.length} fps=${extracted.fps}`,
-    );
-
-    return {
-      videoId,
-      frameCount: extracted.frames.length,
-      fps: extracted.fps,
-      width: extracted.width,
-      height: extracted.height,
-      sourceVideo,
-    };
-  }
 
   async streamSourceVideo(videoId: string): Promise<{
     body: NodeJS.ReadableStream;
@@ -133,7 +75,10 @@ export class PoseService {
     await this.sessionService.upsertLatest(clientId, frame);
   }
 
-  async upsertLatestBatch(clientId: string, frames: PoseFrame[]): Promise<void> {
+  async upsertLatestBatch(
+    clientId: string,
+    frames: PoseFrame[],
+  ): Promise<void> {
     await this.sessionService.upsertLatestBatch(clientId, frames);
   }
 

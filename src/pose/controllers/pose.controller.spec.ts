@@ -13,6 +13,7 @@ import {
   PoseExtractionService,
 } from '../pose-extraction.service';
 import { MinioService } from '../../minio/minio.service';
+import { PoseVideoProcessingService } from '../pose-video-processing.service';
 
 describe('PoseController', () => {
   let controller: PoseController;
@@ -24,6 +25,10 @@ describe('PoseController', () => {
     getVideoById: jest.fn(),
     uploadVideoFile: jest.fn(),
     compareVideos: jest.fn(),
+  };
+
+  const mockPoseVideoProcessingService = {
+    processUploadedVideo: jest.fn(),
   };
 
   const progressSubject = new Subject<ExtractionProgressEvent>();
@@ -43,6 +48,10 @@ describe('PoseController', () => {
         {
           provide: PoseService,
           useValue: mockPoseService,
+        },
+        {
+          provide: PoseVideoProcessingService,
+          useValue: mockPoseVideoProcessingService,
         },
         {
           provide: PoseExtractionService,
