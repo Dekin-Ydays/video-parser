@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Prisma } from '../generated/client/client';
 import { MinioService } from '../minio/minio.service';
@@ -30,6 +30,8 @@ export interface CreateComparisonResultInput {
 
 @Injectable()
 export class PoseVideoRepository {
+  private readonly logger = new Logger(PoseVideoRepository.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly minio: MinioService,
@@ -115,20 +117,61 @@ export class PoseVideoRepository {
 
     const frames = video.frames.map((f) => f.data as unknown as PoseFrame);
 
-    await this.minio.uploadVideo({
-      id: videoId,
-      startTime: video.startTime.toISOString(),
-      endTime: endTime.toISOString(),
-      frames,
+    try {
+      await this.minio.uploadVideo({
+        id: videoId,
+        startTime: video.startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        frames,
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Pose export failed for videoId=${videoId}; keeping DB frames as source of truth`,
+        error,
+      );
+    }
+
+    await this.prisma.video.update({
+      where: { id: videoId },
+      data: { endTime, frameCount: frames.length },
+    });
+  }
+
+  async completeVideoFromStoredFrames(
+    videoId: string,
+    frameCount: number,
+    endTime = new Date(),
+  ): Promise<void> {
+    await this.prisma.video.update({
+      where: { id: videoId },
+      data: { endTime, frameCount },
+    });
+  }
+
+  async getFramesByVideoId(videoId: string): Promise<StoredPoseFrameRecord[]> {
+    const video = await this.prisma.video.findUnique({
+      where: { id: videoId },
+      include: {
+        frames: {
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+          select: { data: true },
+        },
+      },
     });
 
-    await this.prisma.$transaction([
-      this.prisma.frame.deleteMany({ where: { videoId } }),
-      this.prisma.video.update({
-        where: { id: videoId },
-        data: { endTime, frameCount: frames.length },
-      }),
-    ]);
+    if (!video) {
+      return [];
+    }
+
+    return video.frames.map((frame) => ({ data: frame.data }));
+  }
+
+  async updateVideoFrameCount(videoId: string): Promise<void> {
+    const count = await this.countFrames(videoId);
+    await this.prisma.video.update({
+      where: { id: videoId },
+      data: { frameCount: count },
+    });
   }
 
   async listVideos(): Promise<StoredVideoSummaryRecord[]> {
@@ -146,9 +189,7 @@ export class PoseVideoRepository {
         ? video.endTime.getTime() - video.startTime.getTime()
         : null;
 
-      const frameCount = video.endTime
-        ? video.frameCount
-        : video._count.frames;
+      const frameCount = video.endTime ? video.frameCount : video._count.frames;
 
       return {
         id: video.id,
@@ -161,22 +202,7 @@ export class PoseVideoRepository {
   }
 
   async getVideoById(videoId: string): Promise<StoredPoseVideoRecord | null> {
-    const meta = await this.prisma.video.findUnique({
-      where: { id: videoId },
-      select: { endTime: true },
-    });
-
-    if (!meta) return null;
-
-    if (meta.endTime) {
-      // Completed video — fetch the full object from MinIO
-      const stored = await this.minio.downloadVideo(videoId);
-      if (!stored) return null;
-      return { frames: stored.frames.map((f) => ({ data: f })) };
-    }
-
-    // In-progress recording — frames still buffered in SQLite
-    const inProgress = await this.prisma.video.findUnique({
+    const video = await this.prisma.video.findUnique({
       where: { id: videoId },
       include: {
         frames: {
@@ -186,9 +212,9 @@ export class PoseVideoRepository {
       },
     });
 
-    if (!inProgress) return null;
+    if (!video) return null;
     return {
-      frames: inProgress.frames.map((frame) => ({ data: frame.data })),
+      frames: video.frames.map((frame) => ({ data: frame.data })),
     };
   }
 
