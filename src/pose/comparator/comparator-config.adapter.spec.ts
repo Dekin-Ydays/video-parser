@@ -1,4 +1,7 @@
-import { adaptComparatorConfig } from './comparator-config.adapter';
+import {
+  adaptComparatorConfig,
+  validateComparatorConfig,
+} from './comparator-config.adapter';
 
 describe('adaptComparatorConfig', () => {
   it('returns undefined for non-object input', () => {
@@ -34,7 +37,7 @@ describe('adaptComparatorConfig', () => {
     expect(config?.landmarkWeights?.get(12)).toBe(1.5);
   });
 
-  it('keeps map landmark weights and filters invalid entries', () => {
+  it('rejects invalid landmark weight entries instead of filtering them', () => {
     const config = adaptComparatorConfig({
       landmarkWeights: new Map<unknown, unknown>([
         [11, 2],
@@ -43,9 +46,7 @@ describe('adaptComparatorConfig', () => {
       ]),
     });
 
-    expect(config?.landmarkWeights).toBeInstanceOf(Map);
-    expect(config?.landmarkWeights?.size).toBe(1);
-    expect(config?.landmarkWeights?.get(11)).toBe(2);
+    expect(config).toBeUndefined();
   });
 
   it('adapts supported numeric and normalization options', () => {
@@ -70,7 +71,7 @@ describe('adaptComparatorConfig', () => {
     expect(config?.visibilityThreshold).toBe(0.6);
   });
 
-  it('ignores invalid fields and returns undefined when nothing is usable', () => {
+  it('rejects invalid fields and returns undefined', () => {
     const config = adaptComparatorConfig({
       normalization: { center: 'yes' },
       positionWeight: 'high',
@@ -80,5 +81,52 @@ describe('adaptComparatorConfig', () => {
     });
 
     expect(config).toBeUndefined();
+  });
+
+  it('rejects unsupported fields and out-of-range values', () => {
+    expect(validateComparatorConfig({ preset: 'dance' }).ok).toBe(false);
+    expect(validateComparatorConfig({ positionWeight: 1.2 }).ok).toBe(false);
+    expect(validateComparatorConfig({ angularWeight: -0.1 }).ok).toBe(false);
+    expect(validateComparatorConfig({ visibilityThreshold: 2 }).ok).toBe(false);
+    expect(validateComparatorConfig({ landmarkWeights: { '99': 1 } }).ok).toBe(
+      false,
+    );
+  });
+
+  it('accepts frontend comparison presets', () => {
+    const presets = [
+      {
+        normalization: {
+          center: true,
+          scale: true,
+          rotation: false,
+        },
+        positionWeight: 0.5,
+        angularWeight: 0.5,
+      },
+      {
+        normalization: {
+          center: true,
+          scale: true,
+          rotation: true,
+        },
+        positionWeight: 0.4,
+        angularWeight: 0.6,
+      },
+      {
+        normalization: {
+          center: true,
+          scale: true,
+          rotation: false,
+        },
+        positionWeight: 0.7,
+        angularWeight: 0.3,
+        visibilityThreshold: 0.7,
+      },
+    ];
+
+    for (const preset of presets) {
+      expect(validateComparatorConfig(preset).ok).toBe(true);
+    }
   });
 });
