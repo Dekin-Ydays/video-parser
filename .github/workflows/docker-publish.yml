@@ -18,6 +18,8 @@ jobs:
       DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
       DEPLOY_USER: ${{ vars.DEPLOY_USER || 'deploy' }}
       DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+      DIGITALOCEAN_TOKEN: ${{ secrets.DIGITALOCEAN_TOKEN }}
+      DO_FIREWALL_NAME: ${{ vars.DO_FIREWALL_NAME || 'dekin-hosted-firewall' }}
 
     steps:
       - name: Checkout repository
@@ -58,6 +60,37 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Open runner SSH in DigitalOcean firewall
+        if: env.DEPLOY_HOST != '' && env.DEPLOY_SSH_PRIVATE_KEY != ''
+        run: |
+          if [ -z "$DIGITALOCEAN_TOKEN" ]; then
+            echo "DIGITALOCEAN_TOKEN is required to temporarily allow the GitHub runner through the DigitalOcean firewall." >&2
+            exit 1
+          fi
+
+          runner_ip="$(curl -fsS https://api.ipify.org)"
+          ssh_cidr="$runner_ip/32"
+          firewall_id="$(
+            curl -fsS \
+              -H "Authorization: Bearer $DIGITALOCEAN_TOKEN" \
+              "https://api.digitalocean.com/v2/firewalls?name=$DO_FIREWALL_NAME" \
+              | jq -r '.firewalls[0].id // empty'
+          )"
+
+          if [ -z "$firewall_id" ]; then
+            echo "DigitalOcean firewall not found: $DO_FIREWALL_NAME" >&2
+            exit 1
+          fi
+
+          echo "RUNNER_SSH_CIDR=$ssh_cidr" >> "$GITHUB_ENV"
+          echo "DO_FIREWALL_ID=$firewall_id" >> "$GITHUB_ENV"
+
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $DIGITALOCEAN_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://api.digitalocean.com/v2/firewalls/$firewall_id/rules" \
+            -d "{\"inbound_rules\":[{\"protocol\":\"tcp\",\"ports\":\"22\",\"sources\":{\"addresses\":[\"$ssh_cidr\"]}}]}"
+
       - name: Configure deploy SSH
         if: env.DEPLOY_HOST != '' && env.DEPLOY_SSH_PRIVATE_KEY != ''
         run: |
@@ -74,3 +107,17 @@ jobs:
         run: |
           printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/dekin_deploy "$DEPLOY_USER@$DEPLOY_HOST" \
             "sudo /usr/local/bin/dekin-deploy parser '$IMAGE_REF' '${GITHUB_ACTOR}'"
+
+      - name: Close runner SSH in DigitalOcean firewall
+        if: always() && env.DIGITALOCEAN_TOKEN != ''
+        run: |
+          if [ -z "${DO_FIREWALL_ID:-}" ] || [ -z "${RUNNER_SSH_CIDR:-}" ]; then
+            echo "No temporary SSH firewall rule to remove."
+            exit 0
+          fi
+
+          curl -fsS -X DELETE \
+            -H "Authorization: Bearer $DIGITALOCEAN_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://api.digitalocean.com/v2/firewalls/$DO_FIREWALL_ID/rules" \
+            -d "{\"inbound_rules\":[{\"protocol\":\"tcp\",\"ports\":\"22\",\"sources\":{\"addresses\":[\"$RUNNER_SSH_CIDR\"]}}]}"
