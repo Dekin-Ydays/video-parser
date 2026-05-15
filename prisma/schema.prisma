@@ -67,3 +67,14 @@ model ComparisonResult {
   @@index([comparisonVideoId])
   @@index([referenceVideoId, comparisonVideoId, createdAt])
 }
+
+model ExtractionJob {
+  jobId           String   @id
+  phase           String
+  framesProcessed Int?
+  totalFrames     Int?
+  error           String?
+  at              BigInt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

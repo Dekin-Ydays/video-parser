@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { Subject } from 'rxjs';
 
 import type { PoseFrame, MediapipeLandmark } from './types/pose.types';
+import { PoseExtractionJobRepository } from './pose-extraction-job.repository';
 
 export interface ExtractionProgressEvent {
   jobId: string;
@@ -82,6 +83,8 @@ export class PoseExtractionService implements OnModuleInit {
   private readonly progressSubject = new Subject<ExtractionProgressEvent>();
   readonly progress$ = this.progressSubject.asObservable();
 
+  constructor(private readonly jobRepository: PoseExtractionJobRepository) {}
+
   onModuleInit(): void {
     if (!existsSync(this.workerPath)) {
       this.logger.error(
@@ -121,7 +124,7 @@ export class PoseExtractionService implements OnModuleInit {
     const videoPath = path.join(tmpDir, `input-${randomUUID()}${ext}`);
     const outputPath = path.join(tmpDir, `output-${randomUUID()}.json`);
 
-    this.emitProgress({ jobId, phase: 'started', at: Date.now() });
+    await this.emitProgressAndWait({ jobId, phase: 'started', at: Date.now() });
 
     try {
       await fs.writeFile(videoPath, buffer);
@@ -139,7 +142,7 @@ export class PoseExtractionService implements OnModuleInit {
           rawType: 'video-extracted',
         }));
 
-      this.emitProgress({
+      await this.emitProgressAndWait({
         jobId,
         phase: 'completed',
         framesProcessed: parsed.frameCount,
@@ -154,7 +157,7 @@ export class PoseExtractionService implements OnModuleInit {
         frames,
       };
     } catch (err) {
-      this.emitProgress({
+      await this.emitProgressAndWait({
         jobId,
         phase: 'failed',
         error: err instanceof Error ? err.message : String(err),
@@ -168,6 +171,25 @@ export class PoseExtractionService implements OnModuleInit {
 
   private emitProgress(event: ExtractionProgressEvent): void {
     this.progressSubject.next(event);
+    void this.persistProgress(event);
+  }
+
+  private async emitProgressAndWait(
+    event: ExtractionProgressEvent,
+  ): Promise<void> {
+    this.progressSubject.next(event);
+    await this.persistProgress(event);
+  }
+
+  private async persistProgress(event: ExtractionProgressEvent): Promise<void> {
+    try {
+      await this.jobRepository.save(event);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to persist extraction progress jobId=${event.jobId} phase=${event.phase}`,
+        error,
+      );
+    }
   }
 
   private runPython(

@@ -9,6 +9,7 @@ import { FrameBufferService } from './frame.buffer';
 import { MinioModule } from '../minio/minio.module';
 import { PoseExtractionService } from './pose-extraction.service';
 import { PoseVideoProcessingService } from './pose-video-processing.service';
+import { PoseExtractionJobRepository } from './pose-extraction-job.repository';
 
 @Module({
   imports: [MinioModule],
@@ -21,6 +22,7 @@ import { PoseVideoProcessingService } from './pose-video-processing.service';
     PrismaService,
     FrameBufferService,
     PoseExtractionService,
+    PoseExtractionJobRepository,
     PoseVideoProcessingService,
   ],
 })

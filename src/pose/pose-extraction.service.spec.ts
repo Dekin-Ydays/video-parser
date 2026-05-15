@@ -3,6 +3,7 @@ import { EventEmitter } from 'node:events';
 import * as childProcess from 'node:child_process';
 
 import { PoseExtractionService } from './pose-extraction.service';
+import { PoseExtractionJobRepository } from './pose-extraction-job.repository';
 
 jest.mock('node:child_process', () => ({
   spawn: jest.fn(),
@@ -24,11 +25,21 @@ function makeChild() {
 
 describe('PoseExtractionService error mapping', () => {
   let service: PoseExtractionService;
+  const mockJobRepository = {
+    save: jest.fn().mockResolvedValue(undefined),
+  };
 
   beforeEach(async () => {
     spawnMock.mockReset();
+    mockJobRepository.save.mockClear();
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PoseExtractionService],
+      providers: [
+        PoseExtractionService,
+        {
+          provide: PoseExtractionJobRepository,
+          useValue: mockJobRepository,
+        },
+      ],
     }).compile();
     service = module.get(PoseExtractionService);
   });
@@ -46,14 +57,17 @@ describe('PoseExtractionService error mapping', () => {
 
     await expect(
       service.extract(Buffer.from(''), 'recording.mp4'),
-    ).rejects.toThrow(/Python interpreter "python3" not found/);
+    ).rejects.toThrow(/Python interpreter ".+" not found/);
   });
 
   it('hints about missing Python deps when stderr says ModuleNotFoundError', async () => {
     spawnMock.mockImplementation(() => {
       const child = makeChild();
       setImmediate(() => {
-        child.stderr.emit('data', "ModuleNotFoundError: No module named 'cv2'\n");
+        child.stderr.emit(
+          'data',
+          "ModuleNotFoundError: No module named 'cv2'\n",
+        );
         (child as unknown as EventEmitter).emit('close', 1);
       });
       return child;
@@ -71,7 +85,10 @@ describe('PoseExtractionService error mapping', () => {
     spawnMock.mockImplementation(() => {
       const child = makeChild();
       setImmediate(() => {
-        child.stderr.emit('data', "ModuleNotFoundError: No module named 'cv2'\n");
+        child.stderr.emit(
+          'data',
+          "ModuleNotFoundError: No module named 'cv2'\n",
+        );
         (child as unknown as EventEmitter).emit('close', 1);
       });
       return child;
@@ -83,13 +100,22 @@ describe('PoseExtractionService error mapping', () => {
 
     expect(events).toContain('started');
     expect(events).toContain('failed');
+    expect(mockJobRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ phase: 'started' }),
+    );
+    expect(mockJobRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ phase: 'failed' }),
+    );
   });
 
   it('hints about codec issues when OpenCV cannot open the video', async () => {
     spawnMock.mockImplementation(() => {
       const child = makeChild();
       setImmediate(() => {
-        child.stderr.emit('data', 'error: Could not open video: /tmp/foo.webm\n');
+        child.stderr.emit(
+          'data',
+          'error: Could not open video: /tmp/foo.webm\n',
+        );
         (child as unknown as EventEmitter).emit('close', 1);
       });
       return child;
