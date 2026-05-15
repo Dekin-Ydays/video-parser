@@ -42,12 +42,10 @@ export class PoseComparator {
    * Compare two videos and return a comprehensive scoring result
    */
   compareVideos(reference: Video, comparison: Video): ScoringResult {
-    const minLength = Math.min(
-      reference.frames.length,
-      comparison.frames.length,
-    );
+    const alignedPairs = this.alignFramesByTimestamp(reference, comparison);
+    const sampleCount = alignedPairs.length;
 
-    if (minLength === 0) {
+    if (sampleCount === 0) {
       return {
         overallScore: 0,
         frameScores: [],
@@ -70,9 +68,9 @@ export class PoseComparator {
     let totalPositionScore = 0;
     let totalAngularScore = 0;
 
-    for (let i = 0; i < minLength; i++) {
-      const refFrame = this.normalizeFrame(reference.frames[i]);
-      const compFrame = this.normalizeFrame(comparison.frames[i]);
+    for (const pair of alignedPairs) {
+      const refFrame = this.normalizeFrame(pair.reference);
+      const compFrame = this.normalizeFrame(pair.comparison);
 
       const frameScore = this.compareFrames(refFrame, compFrame);
       frameScores.push(frameScore);
@@ -86,17 +84,14 @@ export class PoseComparator {
     }
 
     // Calculate timing score
-    const timingScore = this.calculateTimingScore(
-      reference.frames.length,
-      comparison.frames.length,
-    );
+    const timingScore = this.calculateTimingScore(reference, comparison);
 
     // Calculate statistics
     const statistics = calculateStatistics(frameScores);
 
     // Calculate breakdown scores
-    const avgPositionScore = totalPositionScore / minLength;
-    const avgAngularScore = totalAngularScore / minLength;
+    const avgPositionScore = totalPositionScore / sampleCount;
+    const avgAngularScore = totalAngularScore / sampleCount;
 
     return {
       overallScore: statistics.mean,
@@ -108,6 +103,128 @@ export class PoseComparator {
         statistics,
       },
     };
+  }
+
+  private alignFramesByTimestamp(
+    reference: Video,
+    comparison: Video,
+  ): Array<{ reference: Frame; comparison: Frame }> {
+    const referenceFrames = this.sortedFrames(reference);
+    const comparisonFrames = this.sortedFrames(comparison);
+    const sampleCount = Math.min(
+      referenceFrames.length,
+      comparisonFrames.length,
+    );
+
+    if (sampleCount === 0) {
+      return [];
+    }
+
+    const referenceRange = this.timestampRange(referenceFrames);
+    const comparisonRange = this.timestampRange(comparisonFrames);
+    const pairs: Array<{ reference: Frame; comparison: Frame }> = [];
+
+    for (let index = 0; index < sampleCount; index += 1) {
+      const progress = sampleCount === 1 ? 0 : index / (sampleCount - 1);
+      pairs.push({
+        reference: this.sampleFrameAtProgress(
+          referenceFrames,
+          referenceRange,
+          progress,
+        ),
+        comparison: this.sampleFrameAtProgress(
+          comparisonFrames,
+          comparisonRange,
+          progress,
+        ),
+      });
+    }
+
+    return pairs;
+  }
+
+  private sortedFrames(video: Video): Frame[] {
+    return [...video.frames].sort((a, b) => a.timestamp - b.timestamp);
+  }
+
+  private timestampRange(frames: Frame[]): { start: number; end: number } {
+    return {
+      start: frames[0].timestamp,
+      end: frames[frames.length - 1].timestamp,
+    };
+  }
+
+  private sampleFrameAtProgress(
+    frames: Frame[],
+    range: { start: number; end: number },
+    progress: number,
+  ): Frame {
+    if (frames.length === 1 || range.start === range.end) {
+      return frames[0];
+    }
+
+    const targetTimestamp = range.start + (range.end - range.start) * progress;
+    return this.interpolateFrameAtTimestamp(frames, targetTimestamp);
+  }
+
+  private interpolateFrameAtTimestamp(
+    frames: Frame[],
+    targetTimestamp: number,
+  ): Frame {
+    if (targetTimestamp <= frames[0].timestamp) {
+      return frames[0];
+    }
+
+    const lastFrame = frames[frames.length - 1];
+    if (targetTimestamp >= lastFrame.timestamp) {
+      return lastFrame;
+    }
+
+    for (let index = 1; index < frames.length; index += 1) {
+      const after = frames[index];
+      if (after.timestamp < targetTimestamp) {
+        continue;
+      }
+
+      const before = frames[index - 1];
+      const span = after.timestamp - before.timestamp;
+      const ratio =
+        span === 0 ? 0 : (targetTimestamp - before.timestamp) / span;
+      return this.interpolateFrames(before, after, targetTimestamp, ratio);
+    }
+
+    return lastFrame;
+  }
+
+  private interpolateFrames(
+    before: Frame,
+    after: Frame,
+    timestamp: number,
+    ratio: number,
+  ): Frame {
+    const landmarkCount = Math.min(
+      before.landmarks.length,
+      after.landmarks.length,
+    );
+    const landmarks = Array.from({ length: landmarkCount }, (_, index) => {
+      const left = before.landmarks[index];
+      const right = after.landmarks[index];
+      return {
+        x: this.lerp(left.x, right.x, ratio),
+        y: this.lerp(left.y, right.y, ratio),
+        z: this.lerp(left.z, right.z, ratio),
+        visibility:
+          left.visibility === undefined || right.visibility === undefined
+            ? undefined
+            : this.lerp(left.visibility, right.visibility, ratio),
+      };
+    });
+
+    return { timestamp, landmarks };
+  }
+
+  private lerp(start: number, end: number, ratio: number): number {
+    return start + (end - start) * ratio;
   }
 
   /**
@@ -268,19 +385,37 @@ export class PoseComparator {
   /**
    * Calculate timing score based on video length similarity
    */
-  private calculateTimingScore(
-    referenceLength: number,
-    comparisonLength: number,
-  ): number {
-    if (referenceLength === 0 || comparisonLength === 0) {
+  private calculateTimingScore(reference: Video, comparison: Video): number {
+    if (reference.frames.length === 0 || comparison.frames.length === 0) {
       return 0;
     }
 
+    const referenceDuration = this.calculateDuration(reference);
+    const comparisonDuration = this.calculateDuration(comparison);
+    if (referenceDuration > 0 && comparisonDuration > 0) {
+      return (
+        (Math.min(referenceDuration, comparisonDuration) /
+          Math.max(referenceDuration, comparisonDuration)) *
+        100
+      );
+    }
+
     const ratio =
-      Math.min(referenceLength, comparisonLength) /
-      Math.max(referenceLength, comparisonLength);
+      Math.min(reference.frames.length, comparison.frames.length) /
+      Math.max(reference.frames.length, comparison.frames.length);
 
     // Convert ratio to 0-100 percentage score
     return ratio * 100;
+  }
+
+  private calculateDuration(video: Video): number {
+    const frames = this.sortedFrames(video);
+    if (frames.length < 2) {
+      return 0;
+    }
+    return Math.max(
+      0,
+      frames[frames.length - 1].timestamp - frames[0].timestamp,
+    );
   }
 }

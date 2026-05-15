@@ -110,6 +110,28 @@ describe('PoseComparator', () => {
       expect(result.breakdown.timingScore).toBeCloseTo(33.33, 1);
     });
 
+    it('resamples frames by timestamp before scoring', () => {
+      const video1: Video = {
+        frames: [
+          { ...createStandardFrame(0), timestamp: 0 },
+          { ...createStandardFrame(10), timestamp: 1000 },
+        ],
+      };
+      const video2: Video = {
+        frames: [
+          { ...createStandardFrame(0), timestamp: 0 },
+          { ...createStandardFrame(5), timestamp: 250 },
+          { ...createStandardFrame(10), timestamp: 500 },
+        ],
+      };
+
+      const result = comparator.compareVideos(video1, video2);
+
+      expect(result.frameScores).toHaveLength(2);
+      expect(result.overallScore).toBeGreaterThan(95);
+      expect(result.breakdown.timingScore).toBe(50);
+    });
+
     it('should handle videos with same length', () => {
       const frame = createStandardFrame();
       const video1: Video = { frames: [frame, frame] };
