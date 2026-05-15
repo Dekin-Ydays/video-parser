@@ -72,18 +72,51 @@ describe('PoseController', () => {
   });
 
   describe('compareVideos', () => {
-    it('returns result when service succeeds', async () => {
+    it('returns the ScoringResult contract when service succeeds', async () => {
+      const scoringResult = {
+        overallScore: 88,
+        frameScores: [90, 86],
+        breakdown: {
+          positionScore: 87,
+          angularScore: 89,
+          timingScore: 100,
+          statistics: {
+            mean: 88,
+            min: 86,
+            max: 90,
+            variance: 4,
+          },
+        },
+      };
       mockPoseService.compareVideos.mockResolvedValue({
         ok: true,
-        result: { overallScore: 88 },
+        result: scoringResult,
       });
 
       const result = await controller.compareVideos({
         referenceVideoId: 'a',
         comparisonVideoId: 'b',
+        config: {
+          normalization: {
+            center: true,
+            scale: true,
+            rotation: false,
+          },
+          positionWeight: 0.7,
+          angularWeight: 0.3,
+          visibilityThreshold: 0.7,
+        },
       });
 
-      expect(result).toEqual({ overallScore: 88 });
+      expect(result).toEqual(scoringResult);
+      expect(mockPoseService.compareVideos).toHaveBeenCalledWith(
+        'a',
+        'b',
+        expect.objectContaining({
+          positionWeight: 0.7,
+          angularWeight: 0.3,
+        }),
+      );
     });
 
     it('throws bad request when config is invalid', async () => {
@@ -163,6 +196,65 @@ describe('PoseController', () => {
           size: 4,
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
+  describe('processVideo', () => {
+    it('keeps the frontend process response contract', async () => {
+      const file = {
+        buffer: Buffer.from('video'),
+        originalname: 'demo.mp4',
+        mimetype: 'video/mp4',
+        size: 5,
+      };
+      const response = {
+        videoId: 'video-1',
+        frameCount: 42,
+        fps: 30,
+        width: 1920,
+        height: 1080,
+        sourceVideo: {
+          id: 'source-1',
+          objectKey: 'uploads/source-1/demo.mp4',
+          fileName: 'demo.mp4',
+          mimeType: 'video/mp4',
+          size: 5,
+          uploadedAt: '2026-05-15T09:00:00.000Z',
+        },
+      };
+      mockPoseVideoProcessingService.processUploadedVideo.mockResolvedValue(
+        response,
+      );
+
+      await expect(controller.processVideo(file, 'job-1')).resolves.toEqual(
+        response,
+      );
+      expect(
+        mockPoseVideoProcessingService.processUploadedVideo,
+      ).toHaveBeenCalledWith(file, 'job-1');
+    });
+
+    it('rejects missing process uploads', async () => {
+      await expect(controller.processVideo()).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+  });
+
+  describe('listVideos', () => {
+    it('keeps the frontend video summary contract', async () => {
+      const summaries = [
+        {
+          id: 'video-1',
+          startTime: new Date('2026-05-15T09:00:00.000Z'),
+          endTime: new Date('2026-05-15T09:00:10.000Z'),
+          frameCount: 120,
+          duration: 10000,
+        },
+      ];
+      mockPoseService.listVideos.mockResolvedValue(summaries);
+
+      await expect(controller.listVideos()).resolves.toEqual(summaries);
     });
   });
 

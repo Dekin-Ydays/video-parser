@@ -22,6 +22,7 @@ import {
   ExtractionProgressEvent,
   PoseExtractionService,
 } from './pose-extraction.service';
+import { PoseExtractionJobRepository } from './pose-extraction-job.repository';
 
 const enabled = process.env.RUN_PYTHON_INTEGRATION_TEST === '1';
 const videoPath = process.env.INTEGRATION_TEST_VIDEO;
@@ -32,7 +33,13 @@ describeMaybe('PoseExtractionService (real python pipeline)', () => {
 
   it('extracts at least one frame and emits started + completed events', async () => {
     const moduleRef = await Test.createTestingModule({
-      providers: [PoseExtractionService],
+      providers: [
+        PoseExtractionService,
+        {
+          provide: PoseExtractionJobRepository,
+          useValue: { save: jest.fn().mockResolvedValue(undefined) },
+        },
+      ],
     }).compile();
     const service = moduleRef.get(PoseExtractionService);
 

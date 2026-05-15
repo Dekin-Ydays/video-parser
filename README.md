@@ -63,7 +63,8 @@ Debug HTTP endpoints:
 ## Storage model
 
 - Pose frames are persisted in the database and remain the source of truth for scoring.
-- Raw video files should live in object storage such as MinIO/S3; the database stores only optional asset metadata like `bucket` and `objectKey`.
+- Raw video files live in object storage such as MinIO/S3; the database stores the `bucket` and `objectKey` used by `GET /pose/video/:id/source` to stream the original bytes.
+- Pose JSON exports to object storage are optional derivatives. Comparison must work from the database frames even when an export is missing.
 - Comparison scores are persisted as derived records so attempts can be rescored or audited later without changing the existing frontend contract.
 
 ## Project setup
