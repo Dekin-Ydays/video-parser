@@ -11,6 +11,7 @@ import { PoseExtractionService } from './pose-extraction.service';
 import { PoseVideoProcessingService } from './pose-video-processing.service';
 import { PoseExtractionJobRepository } from './pose-extraction-job.repository';
 import { PoseLiveRecordingService } from './pose-live-recording.service';
+import { PoseFrameIngestionService } from './pose-frame-ingestion.service';
 
 @Module({
   imports: [MinioModule],
@@ -26,6 +27,7 @@ import { PoseLiveRecordingService } from './pose-live-recording.service';
     PoseExtractionJobRepository,
     PoseLiveRecordingService,
     PoseVideoProcessingService,
+    PoseFrameIngestionService,
   ],
 })
 export class PoseModule {}

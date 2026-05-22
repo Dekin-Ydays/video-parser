@@ -36,18 +36,10 @@ describe('FrameBufferService', () => {
     await moduleRef.close();
   });
 
-  it('returns false for invalid payload and does not enqueue writes', async () => {
-    const accepted = service.appendPayload('client-a', { foo: 'bar' });
-
-    expect(accepted).toBe(false);
-    await service.disconnectClient('client-a');
-    expect(mockSessionService.upsertLatestBatch).not.toHaveBeenCalled();
-  });
-
   it('keeps frames isolated per client', async () => {
-    service.appendPayload('client-a', payload(1));
+    service.appendFrame('client-a', payload(1));
     for (let i = 0; i < 20; i += 1) {
-      service.appendPayload('client-b', payload(100 + i));
+      service.appendFrame('client-b', payload(100 + i));
     }
 
     await service.flushClient('client-b');
@@ -73,8 +65,8 @@ describe('FrameBufferService', () => {
   });
 
   it('flushes pending frames for a client on disconnect', async () => {
-    service.appendPayload('client-a', payload(1));
-    service.appendPayload('client-a', payload(2));
+    service.appendFrame('client-a', payload(1));
+    service.appendFrame('client-a', payload(2));
 
     await service.disconnectClient('client-a');
 
@@ -90,10 +82,10 @@ describe('FrameBufferService', () => {
   });
 
   it('ignores new frames after disconnect starts for a client', async () => {
-    service.appendPayload('client-a', payload(1));
+    service.appendFrame('client-a', payload(1));
 
     const disconnectPromise = service.disconnectClient('client-a');
-    service.appendPayload('client-a', payload(2));
+    service.appendFrame('client-a', payload(2));
     await disconnectPromise;
 
     expect(mockSessionService.upsertLatestBatch).toHaveBeenCalledTimes(1);
