@@ -1,3 +1,17 @@
+# Dekin Video Parser
+
+Backend NestJS pour ingestion WebSocket des poses, stockage SQLite/MinIO et comparaison/scoring.
+
+> Nouveau mainteneur : commencer par la passation française canonique dans le repo infrastructure : https://github.com/Dekin-Ydays/infrastructure/blob/main/HANDOVER_FR.md
+>
+> Déploiement : ce repo construit/pousse l’image GHCR et peut déployer le parser via le Droplet provisionné par Terraform.
+
+Endpoints clés :
+
+- WebSocket ingestion : `/ws`
+- Health check : `/pose/health`
+- Comparaison : `POST /pose/compare`
+
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>

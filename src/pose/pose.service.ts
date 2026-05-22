@@ -2,19 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { PoseFrame } from './types/pose.types';
 import {
   adaptComparatorConfig,
-  Frame,
   PoseComparator,
   ScoringResult,
   Video,
 } from './comparator';
 import { MinioService, UploadedSourceVideo } from '../minio/minio.service';
-import {
-  PoseVideoRepository,
-  StoredPoseVideoRecord,
-} from './pose-video.repository';
+import { PoseVideoRepository } from './pose-video.repository';
 import { PoseRecordingSessionService } from './pose-recording-session.service';
 import { stringifyError } from '../utils';
-import { parseScoringFrame } from './utils/pose-frame.parser';
 
 export interface UploadedVideoFileInput {
   buffer: Buffer;
@@ -132,11 +127,7 @@ export class PoseService {
 
   async getVideoById(videoId: string): Promise<Video | null> {
     try {
-      const storedVideo = await this.videoRepository.getVideoById(videoId);
-      if (!storedVideo) {
-        return null;
-      }
-      return this.mapStoredVideoToVideo(storedVideo);
+      return await this.videoRepository.getVideoById(videoId);
     } catch (error) {
       this.logger.error(`Failed to get video videoId=${videoId}`, error);
       return null;
@@ -234,19 +225,5 @@ export class PoseService {
         `Comparison succeeded but result persistence failed for ref=${referenceVideoId} comp=${comparisonVideoId}: ${stringifyError(error)}`,
       );
     }
-  }
-
-  private mapStoredVideoToVideo(storedVideo: StoredPoseVideoRecord): Video {
-    const frames: Frame[] = storedVideo.frames
-      .map((frame, index) => {
-        const parsed = parseScoringFrame(frame.data);
-        if (!parsed) {
-          this.logger.warn(`Skipping frame ${index}: invalid pose frame`);
-        }
-        return parsed;
-      })
-      .filter((frame): frame is Frame => frame !== null);
-
-    return { frames };
   }
 }

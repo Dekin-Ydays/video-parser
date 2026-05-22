@@ -4,6 +4,8 @@ import { Prisma } from '../generated/client/client';
 import { MinioService } from '../minio/minio.service';
 import { PoseFrame } from './types/pose.types';
 import { ScoringResult } from './comparator';
+import type { Frame, Video } from './types/pose-comparison.types';
+import { parseScoringFrame } from './utils/pose-frame.parser';
 
 export interface StoredPoseFrameRecord {
   data: unknown;
@@ -15,10 +17,6 @@ export interface StoredVideoSummaryRecord {
   endTime: Date | null;
   frameCount: number;
   duration: number | null;
-}
-
-export interface StoredPoseVideoRecord {
-  frames: StoredPoseFrameRecord[];
 }
 
 export interface CreateComparisonResultInput {
@@ -201,7 +199,7 @@ export class PoseVideoRepository {
     });
   }
 
-  async getVideoById(videoId: string): Promise<StoredPoseVideoRecord | null> {
+  async getVideoById(videoId: string): Promise<Video | null> {
     const video = await this.prisma.video.findUnique({
       where: { id: videoId },
       include: {
@@ -213,9 +211,7 @@ export class PoseVideoRepository {
     });
 
     if (!video) return null;
-    return {
-      frames: video.frames.map((frame) => ({ data: frame.data })),
-    };
+    return this.mapStoredFramesToScoringVideo(video.frames);
   }
 
   async createComparisonResult({
@@ -240,6 +236,22 @@ export class PoseVideoRepository {
     });
 
     return comparison.id;
+  }
+
+  private mapStoredFramesToScoringVideo(
+    frames: StoredPoseFrameRecord[],
+  ): Video {
+    const scoringFrames: Frame[] = frames
+      .map((frame, index) => {
+        const parsed = parseScoringFrame(frame.data);
+        if (!parsed) {
+          this.logger.warn(`Skipping frame ${index}: invalid pose frame`);
+        }
+        return parsed;
+      })
+      .filter((frame): frame is Frame => frame !== null);
+
+    return { frames: scoringFrames };
   }
 
   private toJsonValue(value: unknown): Prisma.InputJsonValue {

@@ -102,118 +102,50 @@ describe('PoseService', () => {
       expect(videos).toEqual([]);
     });
 
-    it('maps stored video data to comparator format', async () => {
-      mockVideoRepository.getVideoById.mockResolvedValue({
-        frames: [
-          { data: { timestamp: 1, landmarks: [{ x: 1, y: 2, z: 3 }] } },
-          { data: { timestamp: 2, landmarks: [{ x: 4, y: 5, z: 6 }] } },
-        ],
-      });
-
-      const video = await service.getVideoById('v1');
-
-      expect(video).toEqual({
+    it('returns repository scoring videos without knowing storage shape', async () => {
+      const expectedVideo = {
         frames: [
           {
             timestamp: 1,
             landmarks: [{ x: 1, y: 2, z: 3, visibility: undefined }],
           },
-          {
-            timestamp: 2,
-            landmarks: [{ x: 4, y: 5, z: 6, visibility: undefined }],
-          },
         ],
-      });
-    });
-
-    it('drops invalid landmarks instead of coercing values to zero', async () => {
-      mockVideoRepository.getVideoById.mockResolvedValue({
-        frames: [
-          {
-            data: {
-              timestamp: 1,
-              landmarks: [
-                { x: 1, y: 2, z: 3 },
-                { x: 'bad', y: 1, z: 1 },
-                { x: 2, y: 3, z: 4, visibility: 0.9 },
-              ],
-            },
-          },
-        ],
-      });
+      };
+      mockVideoRepository.getVideoById.mockResolvedValue(expectedVideo);
 
       const video = await service.getVideoById('v1');
 
-      expect(video).toEqual({
-        frames: [
-          {
-            timestamp: 1,
-            landmarks: [
-              { x: 1, y: 2, z: 3, visibility: undefined },
-              { x: 2, y: 3, z: 4, visibility: 0.9 },
-            ],
-          },
-        ],
-      });
+      expect(video).toBe(expectedVideo);
+      expect(mockVideoRepository.getVideoById).toHaveBeenCalledWith('v1');
     });
 
-    it('drops frames with invalid timestamp or no valid landmarks', async () => {
-      mockVideoRepository.getVideoById.mockResolvedValue({
-        frames: [
-          {
-            data: {
-              timestamp: 'bad',
-              landmarks: [{ x: 1, y: 2, z: 3 }],
-            },
-          },
-          {
-            data: {
-              timestamp: 2,
-              landmarks: [{ x: 'bad', y: 2 }],
-            },
-          },
-        ],
-      });
+    it('returns null if getVideoById fails', async () => {
+      mockVideoRepository.getVideoById.mockRejectedValue(new Error('db down'));
 
-      const video = await service.getVideoById('v1');
-
-      expect(video).toEqual({ frames: [] });
+      await expect(service.getVideoById('v1')).resolves.toBeNull();
     });
   });
 
   describe('compareVideos', () => {
-    it('accepts JSON-safe comparator config with object landmarkWeights', async () => {
-      const videoA = {
+    function scoringVideo() {
+      return {
         frames: [
           {
-            data: {
-              timestamp: 1,
-              landmarks: Array.from({ length: 33 }, (_, index) => ({
-                x: index * 0.1,
-                y: index * 0.1,
-                z: index * 0.1,
-                visibility: 1,
-              })),
-            },
+            timestamp: 1,
+            landmarks: Array.from({ length: 33 }, (_, index) => ({
+              x: index * 0.1,
+              y: index * 0.1,
+              z: index * 0.1,
+              visibility: 1,
+            })),
           },
         ],
       };
+    }
 
-      const videoB = {
-        frames: [
-          {
-            data: {
-              timestamp: 1,
-              landmarks: Array.from({ length: 33 }, (_, index) => ({
-                x: index * 0.1,
-                y: index * 0.1,
-                z: index * 0.1,
-                visibility: 1,
-              })),
-            },
-          },
-        ],
-      };
+    it('accepts JSON-safe comparator config with object landmarkWeights', async () => {
+      const videoA = scoringVideo();
+      const videoB = scoringVideo();
 
       mockVideoRepository.getVideoById
         .mockResolvedValueOnce(videoA)
@@ -241,21 +173,7 @@ describe('PoseService', () => {
     });
 
     it('still returns a score when comparison result persistence fails', async () => {
-      const video = {
-        frames: [
-          {
-            data: {
-              timestamp: 1,
-              landmarks: Array.from({ length: 33 }, (_, index) => ({
-                x: index * 0.1,
-                y: index * 0.1,
-                z: index * 0.1,
-                visibility: 1,
-              })),
-            },
-          },
-        ],
-      };
+      const video = scoringVideo();
 
       mockVideoRepository.getVideoById
         .mockResolvedValueOnce(video)
@@ -286,21 +204,7 @@ describe('PoseService', () => {
     });
 
     it('returns invalid_config when config cannot be adapted', async () => {
-      const video = {
-        frames: [
-          {
-            data: {
-              timestamp: 1,
-              landmarks: Array.from({ length: 33 }, (_, index) => ({
-                x: index * 0.1,
-                y: index * 0.1,
-                z: index * 0.1,
-                visibility: 1,
-              })),
-            },
-          },
-        ],
-      };
+      const video = scoringVideo();
 
       mockVideoRepository.getVideoById
         .mockResolvedValueOnce(video)
