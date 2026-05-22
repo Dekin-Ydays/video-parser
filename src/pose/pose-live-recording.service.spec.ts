@@ -12,7 +12,7 @@ describe('PoseLiveRecordingService', () => {
   };
 
   const mockFrameBufferService = {
-    appendPayload: jest.fn(),
+    appendFrame: jest.fn(),
     disconnectClient: jest.fn(),
   };
 
@@ -46,14 +46,14 @@ describe('PoseLiveRecordingService', () => {
     expect(mockSessionService.startVideo).toHaveBeenCalledWith('client-a');
   });
 
-  it('appends decoded payloads through the frame buffer', () => {
-    const payload = { landmarks: [{ x: 1, y: 2, z: 3 }] };
-    mockFrameBufferService.appendPayload.mockReturnValue(true);
+  it('appends parsed frames through the frame buffer', () => {
+    const frame = { timestamp: 1, landmarks: [{ x: 1, y: 2, z: 3 }] };
+    mockFrameBufferService.appendFrame.mockReturnValue(true);
 
-    expect(service.appendPayload('client-a', payload)).toBe(true);
-    expect(mockFrameBufferService.appendPayload).toHaveBeenCalledWith(
+    expect(service.appendFrame('client-a', frame)).toBe(true);
+    expect(mockFrameBufferService.appendFrame).toHaveBeenCalledWith(
       'client-a',
-      payload,
+      frame,
     );
   });
 

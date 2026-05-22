@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { FrameBufferService } from './frame.buffer';
+import type { PoseFrame } from './types/pose.types';
 import { PoseRecordingSessionService } from './pose-recording-session.service';
 
 @Injectable()
@@ -13,8 +14,8 @@ export class PoseLiveRecordingService {
     await this.sessionService.startVideo(clientId);
   }
 
-  appendPayload(clientId: string, payload: unknown): boolean {
-    return this.frameBufferService.appendPayload(clientId, payload);
+  appendFrame(clientId: string, frame: PoseFrame): boolean {
+    return this.frameBufferService.appendFrame(clientId, frame);
   }
 
   async disconnectClient(clientId: string): Promise<void> {

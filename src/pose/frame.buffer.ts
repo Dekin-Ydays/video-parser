@@ -1,7 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import type { PoseFrame } from './types/pose.types';
 import { ClientStateMap } from './client-state.map';
-import { normalizeFrame } from './utils/pose.normalization';
 import { PoseRecordingSessionService } from './pose-recording-session.service';
 
 type ClientBufferState = {
@@ -21,12 +20,7 @@ export class FrameBufferService implements OnModuleDestroy {
     private readonly sessionService: PoseRecordingSessionService,
   ) {}
 
-  public appendPayload(clientId: string, payload: unknown): boolean {
-    const frame = normalizeFrame(payload);
-    if (!frame) {
-      return false;
-    }
-
+  public appendFrame(clientId: string, frame: PoseFrame): boolean {
     const state = this.stateByClientId.getOrCreateOpen(clientId, () => ({
       frames: [],
       flushTimer: null,

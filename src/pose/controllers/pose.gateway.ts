@@ -5,9 +5,8 @@ import { randomUUID } from 'crypto';
 import type { IncomingMessage } from 'http';
 import type WebSocket from 'ws';
 import type { RawData } from 'ws';
-import { tryParseJson } from '../../utils';
+import { PoseFrameIngestionService } from '../pose-frame-ingestion.service';
 import { PoseLiveRecordingService } from '../pose-live-recording.service';
-import { decodePoseFrameProtobufBinary } from '../utils/pose.protobuf';
 
 type WelcomeMessage = {
   type: 'welcome';
@@ -20,40 +19,6 @@ type ErrorMessage = {
   message: string;
 };
 
-type IncomingPayloadResult = { payload: unknown } | { error: string };
-
-function rawDataToBuffer(data: RawData): Buffer | null {
-  if (data instanceof Buffer) return data;
-  if (Array.isArray(data)) return Buffer.concat(data);
-  if (data instanceof ArrayBuffer) return Buffer.from(data);
-  return null;
-}
-
-function decodeIncomingPayload(data: RawData): IncomingPayloadResult {
-  if (typeof data === 'string') {
-    const jsonPayload = tryParseJson(data);
-    if (jsonPayload === null) return { error: 'Invalid JSON' };
-    return { payload: jsonPayload };
-  }
-
-  const binary = rawDataToBuffer(data);
-  if (!binary) {
-    return { error: 'Unsupported message type (expected protobuf binary)' };
-  }
-
-  const protobufPayload = decodePoseFrameProtobufBinary(binary);
-  if (protobufPayload) {
-    return { payload: protobufPayload };
-  }
-
-  const fallbackJson = tryParseJson(binary.toString('utf8'));
-  if (fallbackJson !== null) {
-    return { payload: fallbackJson };
-  }
-
-  return { error: 'Invalid protobuf payload' };
-}
-
 @SkipThrottle()
 @WebSocketGateway({ path: '/ws', maxPayload: 1024 * 64 })
 export class PoseGateway {
@@ -61,6 +26,7 @@ export class PoseGateway {
   private readonly clientIdBySocket = new WeakMap<WebSocket, string>();
 
   public constructor(
+    private readonly frameIngestionService: PoseFrameIngestionService,
     private readonly liveRecordingService: PoseLiveRecordingService,
   ) {}
 
@@ -104,20 +70,17 @@ export class PoseGateway {
       return;
     }
 
-    const decoded = decodeIncomingPayload(data);
-    if ('error' in decoded) {
-      return this.sendError(client, decoded.error);
+    const ingested = this.frameIngestionService.ingest(data);
+    if ('message' in ingested) {
+      return this.sendError(client, ingested.message);
     }
 
-    const accepted = this.liveRecordingService.appendPayload(
+    const accepted = this.liveRecordingService.appendFrame(
       clientId,
-      decoded.payload,
+      ingested.frame,
     );
     if (!accepted) {
-      return this.sendError(
-        client,
-        'Invalid payload; expected protobuf PoseFrame landmarks (or JSON landmarks/poseLandmarks/points/data)',
-      );
+      return this.sendError(client, 'Client is not accepting pose frames');
     }
   }
 
