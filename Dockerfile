@@ -1,24 +1,25 @@
 # syntax=docker/dockerfile:1.6
 
 # ---------- Node deps stage ----------
-FROM node:20-slim AS node-deps
+FROM node:22-bookworm-slim AS node-deps
 RUN apt-get update \
  && apt-get install -y --no-install-recommends python3 make g++ ca-certificates \
  && rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
+COPY --from=oven/bun:1.3.14-debian /usr/local/bin/bun /usr/local/bin/bun
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+COPY package.json bun.lock ./
+COPY deploy/package.json ./deploy/
+RUN bun install --frozen-lockfile --filter video-parser
 
 # ---------- Node build stage ----------
 FROM node-deps AS node-builder
 COPY . .
-RUN pnpm run build
+RUN bun run build
 
 # ---------- Python build stage ----------
 # Build the venv and fetch the MediaPipe model here. Isolated so we
 # don't ship pip, build tools, or download tooling in the final image.
-FROM python:3.11-slim AS python-builder
+FROM python:3.11-slim-bookworm AS python-builder
 RUN apt-get update \
  && apt-get install -y --no-install-recommends curl ca-certificates \
  && rm -rf /var/lib/apt/lists/*
@@ -33,7 +34,7 @@ RUN mkdir -p /opt/pose/models \
 COPY python/process_video.py /opt/pose/process_video.py
 
 # ---------- Dev stage ----------
-FROM node:20-slim AS dev
+FROM node:22-bookworm-slim AS dev
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       python3.11 \
@@ -46,11 +47,11 @@ RUN apt-get update \
  && ln -sf /usr/bin/python3.11 /usr/local/bin/python \
  && ln -sf /usr/bin/python3.11 /usr/local/bin/python3 \
  && rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
+COPY --from=oven/bun:1.3.14-debian /usr/local/bin/bun /usr/local/bin/bun
 WORKDIR /app
 
 COPY --from=node-deps /app/node_modules ./node_modules
-COPY package.json pnpm-lock.yaml nest-cli.json prisma.config.ts tsconfig.json tsconfig.build.json ./
+COPY package.json bun.lock nest-cli.json prisma.config.ts tsconfig.json tsconfig.build.json ./
 COPY prisma ./prisma
 COPY src ./src
 COPY test ./test
@@ -63,10 +64,10 @@ ENV PYTHON_BIN=/opt/pose/venv/bin/python \
     MEDIAPIPE_POSE_MODEL=/opt/pose/models/pose_landmarker_heavy.task
 
 EXPOSE 3000
-CMD ["pnpm", "run", "start:dev"]
+CMD ["bun", "run", "start:dev"]
 
 # ---------- Runtime stage ----------
-FROM node:20-slim AS runtime
+FROM node:22-bookworm-slim AS runtime
 # MediaPipe needs Python 3.11 + libGL/libglib for opencv headless.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -80,7 +81,6 @@ RUN apt-get update \
  && ln -sf /usr/bin/python3.11 /usr/local/bin/python \
  && ln -sf /usr/bin/python3.11 /usr/local/bin/python3 \
  && rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 WORKDIR /app
 
@@ -88,7 +88,7 @@ WORKDIR /app
 COPY --from=node-builder /app/dist ./dist
 COPY --from=node-builder /app/node_modules ./node_modules
 COPY --from=node-builder /app/package.json ./
-COPY --from=node-builder /app/pnpm-lock.yaml ./
+COPY --from=node-builder /app/bun.lock ./
 COPY --from=node-builder /app/prisma ./prisma
 COPY --from=node-builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=node-builder /app/tsconfig.json ./tsconfig.json
@@ -103,7 +103,7 @@ ENV PYTHON_BIN=/opt/pose/venv/bin/python \
     MPLCONFIGDIR=/tmp/matplotlib \
     XDG_CACHE_HOME=/tmp/.cache
 
-RUN mkdir -p /app/data && chown -R appuser:appgroup /app /opt/pose
+RUN chown -R appuser:appgroup /app /opt/pose
 USER appuser
 EXPOSE 3000
 CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node dist/src/main"]

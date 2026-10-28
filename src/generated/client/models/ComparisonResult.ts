@@ -626,6 +626,7 @@ export type ComparisonResultCreateOrConnectWithoutReferenceVideoInput = {
 
 export type ComparisonResultCreateManyReferenceVideoInputEnvelope = {
   data: Prisma.ComparisonResultCreateManyReferenceVideoInput | Prisma.ComparisonResultCreateManyReferenceVideoInput[]
+  skipDuplicates?: boolean
 }
 
 export type ComparisonResultCreateWithoutComparisonVideoInput = {
@@ -661,6 +662,7 @@ export type ComparisonResultCreateOrConnectWithoutComparisonVideoInput = {
 
 export type ComparisonResultCreateManyComparisonVideoInputEnvelope = {
   data: Prisma.ComparisonResultCreateManyComparisonVideoInput | Prisma.ComparisonResultCreateManyComparisonVideoInput[]
+  skipDuplicates?: boolean
 }
 
 export type ComparisonResultUpsertWithWhereUniqueWithoutReferenceVideoInput = {
@@ -1577,6 +1579,7 @@ export type ComparisonResultCreateManyArgs<ExtArgs extends runtime.Types.Extensi
    * The data used to create many ComparisonResults.
    */
   data: Prisma.ComparisonResultCreateManyInput | Prisma.ComparisonResultCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1595,6 +1598,7 @@ export type ComparisonResultCreateManyAndReturnArgs<ExtArgs extends runtime.Type
    * The data used to create many ComparisonResults.
    */
   data: Prisma.ComparisonResultCreateManyInput | Prisma.ComparisonResultCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

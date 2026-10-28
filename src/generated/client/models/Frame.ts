@@ -390,6 +390,7 @@ export type FrameCreateOrConnectWithoutVideoInput = {
 
 export type FrameCreateManyVideoInputEnvelope = {
   data: Prisma.FrameCreateManyVideoInput | Prisma.FrameCreateManyVideoInput[]
+  skipDuplicates?: boolean
 }
 
 export type FrameUpsertWithWhereUniqueWithoutVideoInput = {
@@ -1152,6 +1153,7 @@ export type FrameCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * The data used to create many Frames.
    */
   data: Prisma.FrameCreateManyInput | Prisma.FrameCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1170,6 +1172,7 @@ export type FrameCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extension
    * The data used to create many Frames.
    */
   data: Prisma.FrameCreateManyInput | Prisma.FrameCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

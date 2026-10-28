@@ -66,7 +66,7 @@ export class MinioService implements OnModuleInit {
     this.bucket = config.get<string>('MINIO_BUCKET', 'videos');
     this.endpoint = config.get<string>(
       'MINIO_ENDPOINT',
-      'http://localhost:9000',
+      'http://localhost:8333',
     );
     this.client = new S3Client({
       endpoint: this.endpoint,
@@ -172,9 +172,8 @@ export class MinioService implements OnModuleInit {
         contentLength: response.ContentLength,
       };
     } catch (err) {
-      const status =
-        (err as { $metadata?: { httpStatusCode?: number } })?.$metadata
-          ?.httpStatusCode;
+      const status = (err as { $metadata?: { httpStatusCode?: number } })
+        ?.$metadata?.httpStatusCode;
       if (status === 404) return null;
       throw err;
     }
@@ -225,8 +224,8 @@ export class MinioService implements OnModuleInit {
       this.lastError = describeError(err);
       this.logger.warn(
         `Object storage unreachable at ${this.endpoint}: ${this.lastError}. ` +
-          `Uploads and source-video persistence will fail until MinIO is reachable. ` +
-          `Start MinIO with \`docker compose up minio\` from video-parser/.`,
+          `Uploads and source-video persistence will fail until object storage is reachable. ` +
+          `Start it locally with \`docker compose up s3\` from video-parser/.`,
       );
       return false;
     }
@@ -236,9 +235,8 @@ export class MinioService implements OnModuleInit {
     try {
       await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }));
     } catch (err) {
-      const status =
-        (err as { $metadata?: { httpStatusCode?: number } })?.$metadata
-          ?.httpStatusCode;
+      const status = (err as { $metadata?: { httpStatusCode?: number } })
+        ?.$metadata?.httpStatusCode;
       if (status && status !== 404) throw err;
       this.logger.log(`Creating bucket "${this.bucket}"`);
       await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }));

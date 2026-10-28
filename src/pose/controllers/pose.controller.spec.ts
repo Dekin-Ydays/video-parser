@@ -3,7 +3,9 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import * as request from 'supertest';
 import { Subject, firstValueFrom } from 'rxjs';
 import { take, toArray } from 'rxjs/operators';
 import { PoseController } from './pose.controller';
@@ -17,6 +19,7 @@ import { PoseVideoProcessingService } from '../pose-video-processing.service';
 
 describe('PoseController', () => {
   let controller: PoseController;
+  let module: TestingModule;
 
   const mockPoseService = {
     listClients: jest.fn(),
@@ -42,7 +45,7 @@ describe('PoseController', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       controllers: [PoseController],
       providers: [
         {
@@ -337,5 +340,38 @@ describe('PoseController', () => {
         },
       });
     });
+  });
+
+  describe('video upload size limit', () => {
+    let app: INestApplication;
+
+    beforeEach(async () => {
+      app = module.createNestApplication();
+      await app.init();
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it.each(['/pose/video', '/pose/video/process'])(
+      'rejects uploads over 95 MiB on %s with 413',
+      async (path) => {
+        const oversized = Buffer.alloc(95 * 1024 * 1024 + 1);
+
+        await request(app.getHttpServer())
+          .post(path)
+          .attach('file', oversized, {
+            filename: 'big.mp4',
+            contentType: 'video/mp4',
+          })
+          .expect(413);
+
+        expect(mockPoseService.uploadVideoFile).not.toHaveBeenCalled();
+        expect(
+          mockPoseVideoProcessingService.processUploadedVideo,
+        ).not.toHaveBeenCalled();
+      },
+    );
   });
 });

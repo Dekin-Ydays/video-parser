@@ -1793,6 +1793,7 @@ export type VideoCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * The data used to create many Videos.
    */
   data: Prisma.VideoCreateManyInput | Prisma.VideoCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1811,6 +1812,7 @@ export type VideoCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extension
    * The data used to create many Videos.
    */
   data: Prisma.VideoCreateManyInput | Prisma.VideoCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**

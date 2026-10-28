@@ -35,6 +35,13 @@ import {
 } from '../pose-extraction.service';
 import { MinioService } from '../../minio/minio.service';
 
+// Cloudflare rejects request bodies over 100 MB (Free/Pro) before they reach
+// the container; failing here first also bounds the in-memory upload buffer.
+const MAX_VIDEO_UPLOAD_BYTES = 95 * 1024 * 1024;
+const videoUploadInterceptor = FileInterceptor('file', {
+  limits: { fileSize: MAX_VIDEO_UPLOAD_BYTES },
+});
+
 @Controller('pose')
 export class PoseController {
   constructor(
@@ -107,7 +114,7 @@ export class PoseController {
   }
 
   @Post('video')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(videoUploadInterceptor)
   async uploadVideo(@UploadedFile() file?: UploadedVideoFileInput) {
     if (!file) {
       throw new BadRequestException('Video file is required');
@@ -125,7 +132,7 @@ export class PoseController {
   }
 
   @Post('video/process')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(videoUploadInterceptor)
   async processVideo(
     @UploadedFile() file?: UploadedVideoFileInput,
     @Query('jobId') jobId?: string,

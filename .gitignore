@@ -61,3 +61,11 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 .direnv
 python/.venv
 python/models/pose_landmarker_heavy.task
+
+# Python
+__pycache__/
+*.pyc
+
+# Alchemy deploy package
+node_modules/
+.alchemy/

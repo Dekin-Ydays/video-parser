@@ -1131,6 +1131,7 @@ export type ExtractionJobCreateManyArgs<ExtArgs extends runtime.Types.Extensions
    * The data used to create many ExtractionJobs.
    */
   data: Prisma.ExtractionJobCreateManyInput | Prisma.ExtractionJobCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1149,6 +1150,7 @@ export type ExtractionJobCreateManyAndReturnArgs<ExtArgs extends runtime.Types.E
    * The data used to create many ExtractionJobs.
    */
   data: Prisma.ExtractionJobCreateManyInput | Prisma.ExtractionJobCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**

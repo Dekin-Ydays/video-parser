@@ -246,7 +246,7 @@ Based on testing criteria:
 Run the test suite:
 
 ```bash
-npm test
+bun run test
 ```
 
 Test files:
@@ -257,7 +257,7 @@ Test files:
 Run example usage:
 
 ```bash
-npx ts-node src/pose/pose-comparison.example.ts
+bunx ts-node src/pose/pose-comparison.example.ts
 ```
 
 ## Configuration Options
@@ -310,7 +310,7 @@ The pose comparison system integrates with:
 
 1. **PoseService**: Provides `compareVideos()` and `getVideoById()` methods
 2. **PoseController**: Exposes REST endpoints for comparison
-3. **Database**: Reads frame data from Prisma-managed SQLite database
+3. **Database**: Reads frame data from Prisma-managed Postgres database
 4. **WebSocket**: Can be extended to provide real-time comparison
 
 ## Example Output

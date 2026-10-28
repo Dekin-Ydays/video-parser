@@ -8,7 +8,7 @@
  *   INTEGRATION_TEST_VIDEO=/abs/path/to/clip.mp4 \
  *   MEDIAPIPE_POSE_MODEL=/abs/path/to/pose_landmarker_heavy.task \
  *   PYTHON_BIN=/abs/path/to/.venv/bin/python \
- *   pnpm run test -- --testPathPattern pose-extraction.integration
+ *   bun run test --testPathPattern pose-extraction.integration
  *
  * INTEGRATION_TEST_VIDEO must point to a video the bundled OpenCV+FFmpeg can
  * decode (mp4/avc1 or webm/vp8|vp9 work in practice). The test asserts the
